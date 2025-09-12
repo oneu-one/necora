@@ -1,0 +1,1 @@
+cmd_Release/obj.target/lgpio.node := g++ -o Release/obj.target/lgpio.node -shared -pthread -rdynamic  -Wl,-soname=lgpio.node -Wl,--start-group Release/obj.target/lgpio/lgpio.o Release/obj.target/../../node_modules/node-addon-api/nothing.a -Wl,--end-group -llgpio

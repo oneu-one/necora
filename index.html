@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="./node_modules/dracula-prism/dist/css/dracula-prism.min.css">
+  </link>
+  <link rel="stylesheet" href="./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.css">
+  </link>
+  <link rel="stylesheet" href="./fonts/css/all.min.css">
+  </link>
+  <link rel="stylesheet" href="./index.css">
+  </link>
+  <title>ネコラ - Node Electron blockly COde generator Runtime Application</title>
+</head>
+
+<body>
+
+  <!-- 設定ダイアログ -->
+  <dialog id="settingsDlg">
+    <div id="dlgTitle" style="margin-bottom: 4px;">Settings</div>
+    <fieldset style="margin-bottom: 4px;">
+    <legend>GPIO</legend>
+    <div>
+      Host: <input type="text" id="host" name="host" value="localhost" placeholder="localhost" />
+    </div>
+    <div>
+      Port: <input type="number" id="port" name="port" min="0" max="65535" value="8889" placeholder="8889" />
+    </div>
+    <div>
+      Chip: <input type="number" id="gpiodev" name="gpiodev" min="0" max="64" value="4" />
+    </div>
+    </fieldset>
+    <fieldset style="margin-bottom: 4px;">
+    <legend>PWM</legend>
+    <div>
+      Chip: <input type="number" id="pwmchip" name="pwmchip" min="0" max="64" value="0" />
+      Channel: <input type="number" id="pwmchan" name="pwmchan" min="0" max="64" value="2" />
+    </div>
+    </fieldset>
+      <fieldset style="margin-bottom: 4px;">
+        <legend>I2C</legend>
+      <div>
+        Bus: <input type="number" id="i2cdev" name="i2cdev" min="0" max="64" value="1" />
+      </div>
+    </fieldset>
+<div style="padding-left: 0px;">
+    <button id="settingsDlgCancel" title="設定を保存せずダイアログを閉じます。">キャンセル</button>
+    <button id="settingsDlgSave" title="設定を保存してダイアログを閉じます。">保存</button>
+  </div>
+  </dialog>
+
+  <!-- コードダイアログ -->
+  <dialog id="codeDlg">
+    <div id="dlgTitle">Source Code:</div>
+    <pre id="dlgContent" class="line-numbers"><code id="code"></code></pre>
+    <button id="dlgClose" title="このダイアログを閉じます。">閉じる</button>
+    <button id="dlgDeploy" title="Python コードをボードにデプロイします。" style="visibility: hidden;">デプロイ</button>
+  </dialog>
+
+  <!-- ツールバー（左） -->
+  <div class="oc_toolbar">
+    <div class="toolbar-left">
+      <span class="appTitle" title="&quot;near&quot; code generator" onclick="testfunc()"><span class="ne">ね</span><span
+          class="co">こ</span><span class="ra">ら</span></span>
+    </div>
+
+    <!-- ツールバー（右） -->
+    <div class="toolbar-right" id="toolbar-right">
+      <button class="toolbarButton" title="JavaScriptのプログラムコードを表示します。" onclick="_necora.showCode()"><i
+          class="fas fa-code"></i>
+        CODE</button>
+      <button class="toolbarButton" title="ワークスペースや設定を削除して最初から始めます。" onclick="_necora.newWorkspace()"><i
+          class="fas fa-file"></i> 新規</button>
+      <button onclick="_necora.loadWorkspaceFromFile()" class="toolbarButton"
+        title="ファイルに保存したブロックプログラムを読み込みます。既にワークスペースにあるブロックは削除されません。"><i class="fas fa-folder-open"></i> 開く</button>
+      <button onclick="_necora.saveWorkspaceAs()" class="toolbarButton" title="ワークスペースのブロックプログラムをファイルに保存します。"><i
+          class="fas fa-save"></i>
+        保存</button>
+      <button class="toolbarButton" title="設定ダイアログを開きます。" onclick="_necora.showSettings()"><i
+          class="fas fa-cog"></i> 設定</button>
+      <button class="toolbarButton" title="ブロックプログラムを実行します。" onclick="_necora.runCode()" id="runbtn"><i
+          class="fas fa-play-circle"></i> 実行</button>
+      <button class="iconbutton redo" title="アプリを再読み込みします。" onclick="reload_ui()"><i
+          class="fas fa-redo-alt"></i></button>
+    </div>
+  </div>
+
+  <!-- Blockly -->
+  <div id="blocklyArea"></div>
+  <div id="blocklyDiv" style="position: absolute;"></div>
+
+  <!-- ディスプレイカラム（ビデオ・ターミナル表示） -->
+  <div class="rightPane" id="dispColumn">
+    <div id="display_area"><canvas id="canvas_bg" class="display" width="480" height="360"></canvas><canvas id="canvas"
+        class="display" width="480" height="360"></canvas><canvas id="gcanvas" class="display" width="480"
+        height="360"></canvas><canvas id="subcanvas" class="subdisplay" width="160" height="160"></canvas>
+        <video id="subdisplay" class="subdisplay" width="160" height="120" autoplay muted></video></div>
+    <pre id="blackboard" disabled></pre>
+    <form name="inputForm" onsubmit="return false" autocomplete="off" id="inputForm">
+      <div class="inputDiv"><input type="text" id="inputBox">
+        <div class="inputBtnDiv"><input type="submit" value="&#xf058" class="inputBtn fas"></div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Blockly 本体 -->
+  <script src="./node_modules/blockly/blockly_compressed.js"></script>
+  <script src="./node_modules/blockly/javascript_compressed.js"></script>
+  <script src="./node_modules/blockly/python_compressed.js"></script>
+  <script src="./node_modules/blockly/blocks_compressed.js"></script>
+  <script src="./node_modules/blockly/msg/ja.js"></script>
+  <script src="./local_modules/custom-dialog.js"></script>
+  <!-- Blockly プラグイン -->
+  <script src="./node_modules/@blockly/field-colour/dist/index.js"></script>
+  <script src="./node_modules/@blockly/field-slider/dist/index.js"></script>
+  <script src="./node_modules/@blockly/field-angle/dist/index.js"></script>
+  <!-- その他サードパーティ製ライブラリ -->
+  <script src="./node_modules/js-beautify/js/lib/beautify.js"></script>
+  <script src="./node_modules/prismjs/prism.js"></script>
+  <script src="./node_modules/prismjs/components/prism-python.js"></script>
+  <script src="./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.js"></script>
+  <script src="./node_modules/prismjs/plugins/toolbar/prism-toolbar.js"></script>
+  <script src="./node_modules/prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard.js"></script>
+
+  <script>
+    // モジュール (index.mjs) のエクスポートされたメソッドをどこでも使えるようにする
+    var _necora;
+    // UI のリロード
+    function reload_ui() {
+      _necora.rgreset(); // rgpiod から切断
+      location.reload();
+    }
+  </script>
+  <script type="module">
+    import * as o from './index.mjs';
+    _necora = o;
+  </script>
+
+  <script src="./test.js"></script>
+</body>
+
+</html>

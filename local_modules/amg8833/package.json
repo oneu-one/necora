@@ -1,0 +1,7 @@
+{
+  "name": "@necora/amg8833",
+  "version": "1.0.0",
+  "main": "amg8833x.js",
+  "private": true,
+  "license": "MIT"
+}

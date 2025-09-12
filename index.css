@@ -1,0 +1,373 @@
+@font-face {
+  font-family: "Source Code Pro JP";
+  src: url("./fonts/SourceHanCodeJP.otf");
+}
+
+@font-face {
+  font-family: "Pakchee R";
+  src: url("./fonts/Pakchee-R.otf");
+}
+
+#codeDlg {
+  border-color: lightskyblue;
+  border-width: 1px;
+}
+
+#dlgTitle {
+  font-weight: bolder;
+  color: steelblue;
+}
+
+#dlgContent {
+  /* padding: 8px; */
+  border-radius: 8px;
+  font-family: "Source Code Pro JP" !important;
+  font-size: smaller;
+  max-width: 1024px;
+  max-height: 768px;
+  overflow: auto;
+}
+
+#code {
+  font-family: "Source Code Pro JP" !important;
+}
+
+.dlgCli {
+  font-size: smaller;
+}
+
+.prettyprint ol {
+  padding-left: 36px;
+}
+
+#inputForm {
+  display: none;
+}
+
+.inputDiv {
+  position: relative;
+  display: inline-block;
+}
+
+#inputBox {
+  width: 454px;
+  font-size: 1em;
+  color: #666;
+  height: 26px;
+  padding-left: 10px;
+  padding-right: 28px;
+  padding-top: 0px;
+  border-radius: 20px;
+  border: solid;
+  border-width: 1px;
+  border-color: #ccf;
+  outline: none;
+  transition: 0.3s linear;
+}
+
+#inputBox:hover {
+  border-color: #88f;
+}
+
+#inputBox:focus {
+  border-color: #88f;
+  box-shadow: 0px 0px 4px 1px #ccc;
+}
+
+.inputBtn {
+  position: absolute;
+  right: 1px;
+  top: 0px;
+  color: #99f;
+  font-weight: 400;
+  font-size: 1.4em;
+  padding: 0px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  border-radius: 16px;
+  height: 28px;
+  width: 28px;
+  cursor: pointer;
+}
+
+.inputBtn:hover {
+  font-weight: 900;
+}
+
+.display {
+  top: 6px;
+  border-radius: 6px;
+  position: absolute;
+}
+
+#maindisplay {
+  display: none;
+}
+
+#subdisplay {
+  display: none;
+}
+
+.subdisplay {
+  width: 160px;
+  height: 120px;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  border-radius: 4px;
+  border: solid 4px white;
+}
+
+#canvas_bg {
+  background-color: white;
+}
+
+#canvas {
+  position: absolute;
+  top: 6;
+  left: 6;
+}
+
+#subcanvas {
+  width: 160px;
+  height: 160px;
+  border: 0px;
+  visibility: hidden;
+}
+
+.game_fg {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+#gcanvas {
+  background-color: rgba(255, 255, 255, 0.6);
+  display: none;
+}
+
+#display_area {
+  position: relative;
+  left: 0px;
+  width: 480px;
+  height: 360px;
+  padding: 6px;
+  background-color: #eef;
+  border-radius: 8px;
+  margin-top: 2px;
+  margin-bottom: 8px;
+}
+
+.rightPane {
+  position: absolute;
+  right: 8px;
+  top: 48px;
+  width: 500px;
+}
+
+#blackboard {
+  display: none;
+  width: 480px;
+  height: 396px;
+  background-color: #333;
+  color: #ddd;
+  font-family: "Source Code Pro JP";
+  font-size: 0.9em;
+  padding-left: 8px;
+  padding-top: 4px;
+  border: 3px double #eee;
+  overflow: auto;
+  border-radius: 8px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: #fff;
+  overflow: hidden;
+}
+
+/* ツールボックス関連 */
+/* スクロールバー非表示（撮影用） */
+/* div#blocklyDiv .blocklyToolboxDiv::-webkit-scrollbar {
+  display: none;
+} */
+
+/* ツールボックスの行の高さ・ホバー時の変化速度 */
+.blocklyToolboxCategory {
+  /* height: 36px !important; */
+  transition-property: all;
+  transition: 0.2s linear;
+}
+
+/* ホバー時に影をつける */
+.blocklyToolboxCategory:hover {
+  box-shadow: 1px 1px 4px steelblue;
+}
+
+/* ツールボックスフォント */
+/* .blocklyTreeLabel {
+  font-family: "Noto Sans CJK JP Light", sans-serif;
+} */
+/* Adds padding around the group of categories and separators. */
+.blocklyToolboxCategoryGroup {
+  padding: 0.5em;
+}
+
+/* Adds space between the categories, rounds the corners and adds space around the label. */
+.blocklyToolboxCategory {
+  padding: 4px;
+  padding-bottom: 6px;
+  margin-bottom: 0.5em;
+  border-radius: 4px;
+}
+.blocklyToolboxCategory {
+  height: initial;
+}
+
+/* 無効化したカテゴリを半透明化 */
+.blocklyToolboxCategory[disabled="true"] {
+  opacity: 0.5;
+}
+
+/* Changes color of the icon to white. */
+.customIcon {
+  color: white;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+/* Stacks the icon on top of the label. */
+.blocklyTreeRowContentContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Override Flyout BGColor */
+/* .blocklyFlyoutBackground {
+fill: lavender;
+} */
+/* Override Flyout TextColor */
+/* .blocklyFlyoutLabelText {
+fill: steelblue !important;
+} */
+
+/* ツールバー */
+:root {
+  --toolbar-height: 42px;
+}
+
+div.oc_toolbar {
+  height: var(--toolbar-height);
+  position: relative;
+  background-color: #4d97ff;
+}
+
+div.toolbar-left {
+  margin-left: 8px;
+  margin-top: -4px;
+  display: inline-block;
+  color: white;
+}
+
+.appTitle {
+  font-family: "Pakchee R";
+  font-weight: normal;
+  font-size: x-large;
+  padding-left: 10px;
+  letter-spacing: 12px;
+}
+
+.ne {
+  color: pink;
+}
+
+.co {
+  color: aliceblue;
+}
+
+.ra {
+  color: lemonchiffon;
+}
+
+.ga {
+  color: palegreen;
+}
+
+.homelink {
+  text-decoration: none;
+}
+
+.iconbutton {
+  color: white;
+  border: none;
+  background-color: transparent;
+  /* padding: 4px; */
+  transition-property: all;
+  transition: 0.2s linear;
+  font-size: large;
+  line-height: 1em;
+  outline: none;
+  text-decoration: none;
+}
+
+.iconbutton:active {
+  transform: translate(1px, 2px);
+}
+
+.redo {
+  vertical-align: middle;
+  /* margin-top: 0px; */
+}
+
+div.toolbar-right {
+  position: absolute;
+  right: 0px;
+  margin-top: 6px;
+  display: inline-block;
+  /* text-align: right; */
+  width: 506px;
+}
+
+/* ツールバーボタン */
+.toolbarButton {
+  background-color: white;
+  border: none;
+  color: #4d97ff;
+  font-size: 12px;
+  border-radius: 4px;
+  transition-property: all;
+  transition: 0.2s linear;
+  width: 72px;
+  height: 30px;
+  outline: none;
+  vertical-align: middle;
+}
+
+.toolbarButton:hover {
+  background-color: #9fecff;
+  color: white;
+}
+
+.toolbarButton:active {
+  transform: translate(1px, 2px);
+}
+
+.ocgButton {
+  margin-right: 4px;
+  margin-bottom: 6px;
+}
+
+.ocgButton:hover {
+  box-shadow: 1px 1px 6px gray;
+}
+
+#blocklyArea {
+  height: calc(100% - var(--toolbar-height));
+}

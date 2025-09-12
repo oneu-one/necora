@@ -1,0 +1,7 @@
+{
+  "name": "@necora/bme280",
+  "version": "1.0.0",
+  "main": "bme280x.js",
+  "private": true,
+  "license": "MIT"
+}
