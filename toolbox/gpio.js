@@ -92,6 +92,42 @@ const category_gpio = [
       },
       {
         kind: "label",
+        text: "PWM",
+        "web-line": "4.0",
+        "web-line-width": "200",
+      },
+      {
+        kind: "block",
+        type: "tx_pwm",
+        inputs: {
+          gpio: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "16",
+              },
+            },
+          },
+          freq: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "50",
+              },
+            },
+          },
+          duty: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "50",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "label",
         text: "I2C",
         "web-line": "4.0",
         "web-line-width": "200",

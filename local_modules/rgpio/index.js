@@ -1,6 +1,6 @@
 "use strict";
 
-let rg = require("bindings")("rgpio");
+const rg = require("bindings")("rgpio");
 
 exports.SET_ACTIVE_LOW = 4;
 exports.SET_OPEN_DRAIN = 8;
@@ -54,6 +54,23 @@ exports.gpio_read = async (gpio) => {
 };
 exports.gpio_write = async (gpio, level) => {
   return await rg._gpio_write(sbc, gpiochip_hand, gpio, level);
+};
+exports.tx_pwm = async (
+  gpio,
+  pwmFrequency,
+  pwmDutyCycle,
+  pwmOffset = 0,
+  pwmCycles = 0 // 0 = infinite
+) => {
+  return await rg._tx_pwm(
+    sbc,
+    gpiochip_hand,
+    gpio,
+    pwmFrequency,
+    pwmDutyCycle,
+    pwmOffset,
+    pwmCycles
+  );
 };
 exports.serial_open = async (tty, baud, ser_flags = 0) => {
   return await rg._serial_open(sbc, tty, baud, ser_flags);

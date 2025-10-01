@@ -205,6 +205,47 @@ python.pythonGenerator.forBlock["sleep"] = function (block, generator) {
   return code;
 };
 
+/****************** */
+/** 非同期即時関数 ** */
+/****************** */
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "async_iife",
+    tooltip:
+      "ステートメントを非同期で実行します。即時関数を生成するのでスコープに注意しましょう",
+    helpUrl: "",
+    message0: "非同期で実行 %1 %2 ▼ %3",
+    args0: [
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+      {
+        type: "input_statement",
+        name: "do",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME2",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: "special_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["async_iife"] = function (
+  block,
+  generator
+) {
+  const statement_do = generator.statementToCode(block, "do");
+  const code = `(async () => {
+${statement_do}
+})();
+`;
+  return code;
+};
+
 /**************************** */
 /** Say while some seconds ** */
 /**************************** */
@@ -214,12 +255,12 @@ Blockly.Blocks["canvas_say"] = {
     this.appendDummyInput()
       .appendField("と")
       .appendField(new FieldSlider(2, 0, 30, 1), "sec")
-      .appendField("秒言う");
+      .appendField("秒言う ▼");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setStyle("multimedia_blocks");
-    this.setTooltip("キャンバスにフキダシを作ります。");
+    this.setTooltip("キャンバスにフキダシを作ります。※非同期");
     this.setHelpUrl("");
   },
 };
@@ -237,6 +278,150 @@ javascript.javascriptGenerator.forBlock["canvas_say"] = function (
     `_necora.fukidashi(String(${value_say}), ${value_sec});`,
     "",
   ].join("\n");
+  return code;
+};
+
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "prompt",
+    tooltip:
+      "質問をして答えを待ちます。入力欄でキーボードのエンターキーが入力されるか、チェックマークボタンが押されると実行されます。",
+    helpUrl: "",
+    message0: "%1 ときいて %2 を待つ %3 %4 ▼ %5",
+    args0: [
+      {
+        type: "input_value",
+        name: "ask",
+        check: "String",
+      },
+      {
+        type: "field_variable",
+        name: "answer",
+        variable: "答え",
+      },
+      {
+        type: "input_dummy",
+        name: "DUM1",
+      },
+      {
+        type: "input_statement",
+        name: "do",
+      },
+      {
+        type: "input_dummy",
+        name: "DUM2",
+        align: "RIGHT",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "special_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["prompt"] = function (
+  block,
+  generator
+) {
+  const value_ask = generator.valueToCode(
+    block,
+    "ask",
+    javascript.Order.ATOMIC
+  );
+  const variable_answer = generator.getVariableName(
+    block.getFieldValue("answer")
+  );
+  const statement_do = generator.statementToCode(block, "do");
+  const code = `_necora.fukidashi(${value_ask}, 0);
+  _inputForm = document.getElementById('inputForm');
+  _inputBox = document.getElementById('inputBox');
+  _inputForm.style.display = 'inline-block';
+  _inputBox.focus();
+  const _inputFunc = async () => {
+    if (_inputBox.value.length > 0) {
+      ${variable_answer} = _inputBox.value;
+      _inputForm.style.display = "none";
+      _inputBox.value = '';
+      document.getElementById('canvas').getContext('2d').clearRect(_necora.fdRecentBox.x,_necora.fdRecentBox.y,_necora.fdRecentBox.w,_necora.fdRecentBox.h);
+      ${statement_do}
+      console.log('Removing listener...');
+      _inputForm.removeEventListener('submit', _inputFunc );
+    }
+  };
+  _inputForm.addEventListener('submit', _inputFunc );
+`;
+  return code;
+};
+
+/***************************** */
+/** Terminal'ish' text area ** */
+/***************************** */
+// Show terminal
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "terminal_show",
+    tooltip: "ターミナルっぽいテキスト表示エリア",
+    helpUrl: "",
+    message0: "ターミナルを表示 %1",
+    args0: [
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "special_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["terminal_show"] = function () {
+  const code = `const _termEl = document.getElementById("terminal");
+_termEl.style.display = "inline-block";\n`;
+  return code;
+};
+// Write to terminal
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "terminal_write",
+    tooltip:
+      "ターミナルっぽいテキスト表示エリアに文字を表示します。☑を入れると最後に改行を挿入します",
+    helpUrl: "",
+    message0: "ターミナルに %1 を表示 %2 改行 %3",
+    args0: [
+      {
+        type: "input_value",
+        name: "text",
+      },
+      {
+        type: "field_checkbox",
+        name: "return",
+        checked: "TRUE",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "special_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["terminal_write"] = function (
+  block,
+  generator
+) {
+  let value_text = generator.valueToCode(
+    block,
+    "text",
+    javascript.Order.ATOMIC
+  );
+  const checkbox_return = block.getFieldValue("return");
+  if (checkbox_return === "TRUE") value_text += " + '\\n'";
+  const code = `_termEl.value += ${value_text};
+_termEl.scrollTop = _termEl.scrollHeight;\n`;
   return code;
 };
 

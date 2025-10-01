@@ -209,6 +209,32 @@ const category_sensor = [
       {
         kind: "block",
         type: "oled_drawJPfont",
+        inputs: {
+          x: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0",
+              },
+            },
+          },
+          y: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0",
+              },
+            },
+          },
+          text: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "吾輩は猫である",
+              },
+            },
+          },
+        },
       },
       {
         kind: "label",
@@ -218,15 +244,33 @@ const category_sensor = [
       },
       {
         kind: "block",
-        type: "servo_start",
+        type: "pca9685_start",
       },
       {
         kind: "block",
-        type: "servo_stop",
+        type: "pca9685_stop",
       },
       {
         kind: "block",
-        type: "servo_angle",
+        type: "pca9685_setangle",
+        inputs: {
+          channel: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0",
+              },
+            },
+          },
+          angle: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "90",
+              },
+            },
+          },
+        },
       },
       {
         kind: "label",

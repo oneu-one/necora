@@ -1,5 +1,152 @@
 import { settings } from "../index.mjs";
 
+/**************************** */
+/** Servo Moter Driver Module */
+/**************************** */
+// 初期化
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "pca9685_start",
+    tooltip: "PCA9685サーボモータドライバに接続し、使用できるようにします。",
+    helpUrl: "",
+    message0: "サーボドライバ（アドレス： %1 ）を %2 として開始 %3",
+    args0: [
+      {
+        type: "field_dropdown",
+        name: "addr",
+        options: [
+          ["0x40", "0x40"],
+          ["0x41", "0x41"],
+        ],
+      },
+      {
+        type: "field_variable",
+        name: "handle",
+        variable: "サーボ",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["pca9685_start"] = function (
+  block,
+  generator
+) {
+  const dropdown_addr = block.getFieldValue("addr");
+  const variable_handle = generator.getVariableName(
+    block.getFieldValue("handle")
+  );
+  Blockly.JavaScript.provideFunction_("require_pca9685", [
+    `const { PCA9685 } = require('@necora/pca9685');`,
+  ]);
+
+  const code = `${variable_handle} = new PCA9685();
+  await ${variable_handle}.init(${settings.data.i2cdev}, ${dropdown_addr});
+  await ${variable_handle}.setPWMFreq(50);\n`;
+  return code;
+};
+// サーボモータドライバを停止
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "pca9685_stop",
+    tooltip: "pca9685 サーボモータドライバを停止し、接続を終了します。",
+    helpUrl: "",
+    message0: "サーボドライバ %1 を停止 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["pca9685_stop"] = function (
+  block,
+  generator
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC
+  );
+  const code = `await ${value_handle}.stop();
+  await ${value_handle}.close();\n`;
+  return code;
+};
+// 回転
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "pca9685_setangle",
+    tooltip:
+      "PCA9685 に接続したサーボモータを動かします。0° ～ 180° の範囲で指定します。",
+    helpUrl: "",
+    message0:
+      "サーボドライバ %1 のチャンネル %2 のサーボモータの角度を %3 にする %4",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_value",
+        name: "channel",
+      },
+      {
+        type: "input_value",
+        name: "angle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["pca9685_setangle"] = function (
+  block,
+  generator
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC
+  );
+  const value_channel = generator.valueToCode(
+    block,
+    "channel",
+    javascript.Order.ATOMIC
+  );
+  const value_angle = generator.valueToCode(
+    block,
+    "angle",
+    javascript.Order.ATOMIC
+  );
+  const code = `await ${value_handle}.setAngle(${value_channel}, ${value_angle});\n`;
+  return code;
+};
+
 /*************** */
 /** SSD1306 OLED */
 /*************** */
@@ -60,7 +207,6 @@ javascript.javascriptGenerator.forBlock["oled_init"] = function (
   ]);
   let size_x, size_y;
   [size_x, size_y] = dropdown_disp_size.split("x");
-  // TODO: Assemble javascript into the code variable.
   const code = `${variable_handle} = new SSD1306({bus: ${settings.data.i2cdev},address: ${dropdown_i2c_addr}, width: ${size_x}, height: ${size_y}});
 await ${variable_handle}.initialize();`;
   return code;
@@ -632,7 +778,9 @@ javascript.javascriptGenerator.forBlock["grideye_close"] = function (
     "handle",
     Blockly.JavaScript.ORDER_ATOMIC
   );
-  const code = `await ${value_handle}.close();`;
+  const code = `await ${value_handle}.close();
+document.getElementById('display_area').removeChild(_grideye_canvas);
+`;
   return code;
 };
 
@@ -720,7 +868,8 @@ Blockly.defineBlocksWithJsonArray([
     inputsInline: true,
     previousStatement: null,
     nextStatement: null,
-    tooltip: "ディスプレイエリアにAMG8833データ表示用キャンバスを表示します。",
+    tooltip:
+      "ディスプレイエリアにAMG8833データ表示用キャンバスを作成・表示します。",
     helpUrl: "",
     style: "multimedia_blocks",
   },
@@ -729,10 +878,11 @@ javascript.javascriptGenerator.forBlock["grideye_canvas_show"] = function (
   block,
   generator
 ) {
-  var code = `let _grideye_canvas = document.getElementById('subcanvas');
+  var code = `const _grideye_canvas = document.createElement('canvas');
 _grideye_canvas.setAttribute('width', 8);
 _grideye_canvas.setAttribute('height', 8);
-_grideye_canvas.style.visibility = 'visible';
+_grideye_canvas.className = 'grideye_canvas';
+document.getElementById('display_area').appendChild(_grideye_canvas);
 const _grideye_ctx = _grideye_canvas.getContext('2d', {willReadFrequently: true});
 const _grideye_imgData = _grideye_ctx.createImageData(8, 8);
 `;

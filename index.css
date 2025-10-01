@@ -105,9 +105,9 @@
   display: none;
 }
 
-#subdisplay {
+/* #subdisplay {
   display: none;
-}
+} */
 
 .subdisplay {
   width: 160px;
@@ -129,11 +129,10 @@
   left: 6;
 }
 
-#subcanvas {
+.grideye_canvas {
   width: 160px;
   height: 160px;
   border: 0px;
-  visibility: hidden;
 }
 
 .game_fg {
@@ -142,7 +141,7 @@
 
 #gcanvas {
   background-color: rgba(255, 255, 255, 0.6);
-  display: none;
+  /* display: none; */
 }
 
 #display_area {
@@ -164,8 +163,7 @@
   width: 500px;
 }
 
-#blackboard {
-  display: none;
+#terminal {
   width: 480px;
   height: 396px;
   background-color: #333;
@@ -179,6 +177,9 @@
   border-radius: 8px;
   margin-top: 0px;
   margin-bottom: 0px;
+  resize: none;
+  line-height: 1.4em; /* 全角文字を入力時にこれ以上の高さがないと入力時にぎくしゃくするため */
+  outline: none;
 }
 
 html,
@@ -211,9 +212,9 @@ body {
 }
 
 /* ツールボックスフォント */
-/* .blocklyTreeLabel {
-  font-family: "Noto Sans CJK JP Light", sans-serif;
-} */
+.blocklyToolboxCategoryLabel {
+  font-family: "VL PGothic";
+}
 /* Adds padding around the group of categories and separators. */
 .blocklyToolboxCategoryGroup {
   padding: 0.5em;
@@ -341,6 +342,7 @@ div.toolbar-right {
   border: none;
   color: #4d97ff;
   font-size: 12px;
+  font-family: "VL PGothic";
   border-radius: 4px;
   transition-property: all;
   transition: 0.2s linear;

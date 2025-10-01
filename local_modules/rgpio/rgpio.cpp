@@ -210,6 +210,35 @@ Promise _gpioWrite(const CallbackInfo &info)
   return deferred.Promise();
 }
 
+// PWM
+Promise _txPwm(const CallbackInfo &info)
+{
+  Env env = info.Env();
+  auto deferred = Napi::Promise::Deferred::New(env);
+  if (info.Length() != 7)
+  {
+    deferred.Reject(
+        TypeError::New(env, "Invalid argument count: _txPwm").Value());
+  }
+  else if (!info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsNumber() || !info[4].IsNumber() || !info[5].IsNumber() || !info[6].IsNumber())
+  {
+    deferred.Reject(
+        Napi::TypeError::New(env, "Invalid argument types: _txPwm").Value());
+  }
+  else
+  {
+    int sbc = info[0].As<Number>().Int32Value();
+    int handle = info[1].As<Number>().Int32Value();
+    int gpio = info[2].As<Number>().Int32Value();
+    float pwmFrequency = info[3].As<Number>().FloatValue();
+    float pwmDutyCycle = info[4].As<Number>().FloatValue();
+    int pwmOffset = info[5].As<Number>().Int32Value();
+    int pwmCycles = info[6].As<Number>().Int32Value();
+    deferred.Resolve(Number::New(env, tx_pwm(sbc, handle, gpio, pwmFrequency, pwmDutyCycle, pwmOffset, pwmCycles)));
+  }
+  return deferred.Promise();
+}
+
 // シリアルポートを開く
 Promise _serialOpen(const CallbackInfo &info)
 {
@@ -830,6 +859,7 @@ Init(Env env, Object exports)
   exports.Set(String::New(env, "_gpio_claim_output"), Function::New(env, _gpioClaimOutput));
   exports.Set(String::New(env, "_gpio_read"), Function::New(env, _gpioRead));
   exports.Set(String::New(env, "_gpio_write"), Function::New(env, _gpioWrite));
+  exports.Set(String::New(env, "_tx_pwm"), Function::New(env, _txPwm));
   exports.Set(String::New(env, "_serial_open"), Function::New(env, _serialOpen));
   exports.Set(String::New(env, "_serial_close"), Function::New(env, _serialClose));
   exports.Set(String::New(env, "_serial_read"), Function::New(env, _serialRead));

@@ -26,8 +26,10 @@ Blockly.defineBlocksWithJsonArray([
   },
 ]);
 javascript.javascriptGenerator.forBlock["rgpiod_start"] = function () {
-  const code = `const _rg = require('@necora/rgpio');
-await _rg.start("${settings.data.host}", "${settings.data.port}", ${settings.data.gpiodev});\n`;
+  Blockly.JavaScript.provideFunction_("import_gpio", [
+    'const _rg = require("@necora/rgpio");',
+  ]);
+  const code = `await _rg.start("${settings.data.host}", "${settings.data.port}", ${settings.data.gpiodev});\n`;
   return code;
 };
 /************************************ */
@@ -51,7 +53,7 @@ Blockly.defineBlocksWithJsonArray([
   },
 ]);
 javascript.javascriptGenerator.forBlock["rgpiod_stop"] = function () {
-  const code = `_rg.stop();\n`;
+  const code = `await _rg.stop();\n`;
   return code;
 };
 
@@ -321,6 +323,63 @@ python.pythonGenerator.forBlock["gpio_write"] = function (block, generator) {
   return code;
 };
 
+/****************** */
+/** Software PWM ** */
+/****************** */
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "tx_pwm",
+    tooltip: "GPIO にソフトウェア PWM を出力します。",
+    helpUrl: "",
+    message0: "GPIO %1 に周波数 %2 Hz , デューティ比 %3 % のパルス波を出力 %4",
+    args0: [
+      {
+        type: "input_value",
+        name: "gpio",
+      },
+      {
+        type: "input_value",
+        name: "freq",
+        check: "Number",
+      },
+      {
+        type: "input_value",
+        name: "duty",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["tx_pwm"] = function (
+  block,
+  generator
+) {
+  const value_gpio = generator.valueToCode(
+    block,
+    "gpio",
+    javascript.Order.ATOMIC
+  );
+  const value_freq = generator.valueToCode(
+    block,
+    "freq",
+    javascript.Order.ATOMIC
+  );
+  const value_duty = generator.valueToCode(
+    block,
+    "duty",
+    javascript.Order.ATOMIC
+  );
+  const code = `await _rg.tx_pwm(${value_gpio}, ${value_freq}, ${value_duty});\n`;
+  return code;
+};
 /********************* */
 /** Open I2C Device ** */
 /********************* */

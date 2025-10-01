@@ -38,6 +38,15 @@ var settings = new Settings();
 
 //============ ユーティリティメソッド ===============
 
+// サウンド再生
+const playSound = (sound_name) => {
+  const fpath = "./sound/" + sound_name + ".wav";
+  const audioElement = new Audio(fpath);
+  audioElement.addEventListener("canplaythrough", (event) => {
+    audioElement.play();
+  });
+};
+
 // OK,Cancel ２択のダイアログを表示
 function confirmdlg(title, message, callback) {
   CustomDialog.show(title, message, {
@@ -499,8 +508,10 @@ export {
   loadWorkspaceFromFile,
   saveWorkspaceAs,
   fukidashi,
+  playSound,
   rgreset,
   settings,
+  fdRecentBox,
 };
 
 //============ 以下、Blockly 表示関連 =================================================================================
@@ -521,6 +532,10 @@ var rp2_color = "180";
 var theme = Blockly.Theme.defineTheme("necora", {
   base: Blockly.Themes.Classic,
   startHats: true,
+  fontStyle: {
+    family: "VL PGothic",
+    style: "regular",
+  },
   componentStyles: {
     toolboxBackgroundColour: "aliceblue",
     flyoutBackgroundColour: "lavender",

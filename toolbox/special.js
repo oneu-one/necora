@@ -53,6 +53,10 @@ const category_special = [
         },
       },
       {
+        kind: "block",
+        type: "async_iife",
+      },
+      {
         kind: "label",
         text: "入出力",
         "web-line": "4.0",
@@ -63,6 +67,38 @@ const category_special = [
         blockxml:
           '<block type="canvas_say"><value name="say"><shadow type="text"><field name="TEXT">コンニチワ！</field></shadow></value><field name="sec">2</field></block>',
         type: "canvas_say",
+      },
+      {
+        kind: "block",
+        type: "prompt",
+        inputs: {
+          ask: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "お名前は？",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
+        type: "terminal_show",
+      },
+      {
+        kind: "block",
+        type: "terminal_write",
+        inputs: {
+          text: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "Hello, World!",
+              },
+            },
+          },
+        },
       },
       {
         kind: "block",

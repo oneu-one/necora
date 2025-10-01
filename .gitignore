@@ -1,5 +1,7 @@
 # NECoRA
 test*
+build/
+bin/
 
 # Logs
 logs
