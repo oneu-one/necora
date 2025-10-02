@@ -32,22 +32,22 @@
     </div>
     </fieldset>
     <fieldset style="margin-bottom: 4px;">
-    <legend>PWM</legend>
+      <legend>I2C</legend>
     <div>
-      Chip: <input type="number" id="pwmchip" name="pwmchip" min="0" max="64" value="0" />
-      Channel: <input type="number" id="pwmchan" name="pwmchan" min="0" max="64" value="2" />
+      Bus: <input type="number" id="i2cdev" name="i2cdev" min="0" max="64" value="1" />
     </div>
     </fieldset>
-      <fieldset style="margin-bottom: 4px;">
-        <legend>I2C</legend>
-      <div>
-        Bus: <input type="number" id="i2cdev" name="i2cdev" min="0" max="64" value="1" />
-      </div>
+    <fieldset style="margin-bottom: 4px;">
+    <legend>PCA9685</legend>
+    <div>
+      Min: <input type="number" id="min_pulse" name="min_pulse" min="0" max="4096" value="130" />
+      Max: <input type="number" id="max_pulse" name="max_pulse" min="0" max="4096" value="540" />
+    </div>
     </fieldset>
-<div style="padding-left: 0px;">
+    <div style="padding-left: 0px;">
     <button id="settingsDlgCancel" title="設定を保存せずダイアログを閉じます。">キャンセル</button>
     <button id="settingsDlgSave" title="設定を保存してダイアログを閉じます。">保存</button>
-  </div>
+    </div>
   </dialog>
 
   <!-- コードダイアログ -->

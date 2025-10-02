@@ -238,7 +238,7 @@ const category_sensor = [
       },
       {
         kind: "label",
-        text: "サーボモータ",
+        text: "サーボモータ (PCA9685)",
         "web-line": "4.0",
         "web-line-width": "200",
       },

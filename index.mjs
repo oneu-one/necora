@@ -4,13 +4,13 @@ import "./blocks/index.js"; // カスタムブロック定義
 class Settings {
   constructor() {
     this.data = {
-      version: 1,
+      version: 2,
       wsfname: "workspace.xml",
       host: "localhost",
       port: "8889",
       gpiodev: "4",
-      pwmchip: "0",
-      pwmchan: "2",
+      min_pulse: "130",
+      max_pulse: "540",
       i2cdev: "1",
     };
   }
@@ -192,15 +192,15 @@ function showSettings() {
   const fld_host = document.getElementById("host");
   const fld_port = document.getElementById("port");
   const fld_gpiochip = document.getElementById("gpiodev");
-  const fld_pwmchip = document.getElementById("pwmchip");
-  const fld_pwmchan = document.getElementById("pwmchan");
+  const fld_min_pulse = document.getElementById("min_pulse");
+  const fld_max_pulse = document.getElementById("max_pulse");
   const fld_i2cdev = document.getElementById("i2cdev");
 
   fld_host.value = settings.data.host;
   fld_port.value = settings.data.port;
   fld_gpiochip.value = settings.data.gpiodev;
-  fld_pwmchip.value = settings.data.pwmchip;
-  fld_pwmchan.value = settings.data.pwmchan;
+  fld_min_pulse.value = settings.data.min_pulse;
+  fld_max_pulse.value = settings.data.max_pulse;
   fld_i2cdev.value = settings.data.i2cdev;
 
   dialog.showModal();
@@ -212,8 +212,8 @@ function showSettings() {
       if (fld_host.value) settings.data.host = fld_host.value;
       if (fld_port.value) settings.data.port = fld_port.value;
       if (fld_gpiochip.value) settings.data.gpiodev = fld_gpiochip.value;
-      if (fld_pwmchip.value) settings.data.pwmchip = fld_pwmchip.value;
-      if (fld_pwmchan.value) settings.data.pwmchan = fld_pwmchan.value;
+      if (fld_min_pulse.value) settings.data.min_pulse = fld_min_pulse.value;
+      if (fld_max_pulse.value) settings.data.max_pulse = fld_max_pulse.value;
       if (fld_i2cdev.value) settings.data.i2cdev = fld_i2cdev.value;
     }
     dialog.close();
