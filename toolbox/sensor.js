@@ -274,6 +274,31 @@ const category_sensor = [
       },
       {
         kind: "label",
+        text: "６軸慣性センサ (MCU6050)",
+        "web-line": "4.0",
+        "web-line-width": "200",
+      },
+      {
+        kind: "block",
+        type: "inertial_init",
+        fields: {
+          addr: "0x68",
+        },
+      },
+      {
+        kind: "block",
+        type: "inertial_stop",
+      },
+      {
+        kind: "block",
+        type: "inertial_get_accel",
+      },
+      {
+        kind: "block",
+        type: "inertial_get_gyro",
+      },
+      {
+        kind: "label",
         text: "_",
         "web-line": "4.0",
         "web-line-width": "200",

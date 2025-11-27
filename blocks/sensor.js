@@ -1,5 +1,158 @@
 import { settings } from "../index.mjs";
 
+/************************** */
+/** MPU6050 Inertial Sensor */
+/************************** */
+// 初期化
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "inertial_init",
+    tooltip:
+      "3軸加速度・3軸ジャイロセンサー MPU-6050 との I2C 接続を開き、初期化します。",
+    helpUrl: "",
+    message0: "６軸慣性センサ（アドレス： %1 を %2 として開いて初期化 %3",
+    args0: [
+      {
+        type: "field_dropdown",
+        name: "addr",
+        options: [
+          ["0x68", "0x68"],
+          ["0x69", "0x69"],
+        ],
+      },
+      {
+        type: "field_variable",
+        name: "mpu6050",
+        variable: "慣性センサ",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["inertial_init"] = function (
+  block,
+  generator
+) {
+  const dropdown_addr = block.getFieldValue("addr");
+  const variable_mpu6050 = generator.getVariableName(
+    block.getFieldValue("mpu6050")
+  );
+  Blockly.JavaScript.provideFunction_("require_mpu6050", [
+    `const { MPU6050 } = require('@necora/mpu6050');`,
+  ]);
+  const code = `${variable_mpu6050} = new MPU6050();
+  await ${variable_mpu6050}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
+  return code;
+};
+// 停止
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "inertial_stop",
+    tooltip: "3軸加速度・3軸ジャイロセンサー MPU-6050 との接続を閉じます。",
+    helpUrl: "",
+    message0: "慣性センサ %1 を停止 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "mpu6050",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["inertial_stop"] = function (
+  block,
+  generator
+) {
+  const value_mpu6050 = generator.valueToCode(
+    block,
+    "mpu6050",
+    javascript.Order.ATOMIC
+  );
+  const code = `await ${value_mpu6050}.stop();\n`;
+  return code;
+};
+// 加速度データ取得
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "inertial_get_accel",
+    tooltip:
+      "3軸加速度・3軸ジャイロセンサー MPU-6050 から加速度データを [x, y, z] のリストとして取得します。",
+    helpUrl: "",
+    message0: "慣性センサ %1 の加速度 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "mpu6050",
+      },
+      {
+        type: "input_dummy",
+        name: "NAM",
+      },
+    ],
+    output: "Array",
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["inertial_get_accel"] = function (
+  block,
+  generator
+) {
+  const value_mpu6050 = generator.valueToCode(
+    block,
+    "mpu6050",
+    javascript.Order.ATOMIC
+  );
+  const code = `await ${value_mpu6050}.get_accel_data()`;
+  return [code, javascript.Order.NONE];
+};
+// 角速度データ取得
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "inertial_get_gyro",
+    tooltip:
+      "3軸加速度・3軸ジャイロセンサー MPU-6050 から角速度データを [x, y, z] のリストとして取得します。",
+    helpUrl: "",
+    message0: "慣性センサ %1 の角速度 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "mpu6050",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    output: "Array",
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["inertial_get_gyro"] = function (
+  block,
+  generator
+) {
+  const value_mpu6050 = generator.valueToCode(
+    block,
+    "mpu6050",
+    javascript.Order.ATOMIC
+  );
+  const code = `await ${value_mpu6050}.get_gyro_data()`;
+  return [code, javascript.Order.NONE];
+};
+
 /**************************** */
 /** Servo Moter Driver Module */
 /**************************** */
@@ -143,7 +296,7 @@ javascript.javascriptGenerator.forBlock["pca9685_setangle"] = function (
     "angle",
     javascript.Order.ATOMIC
   );
-  const code = `await ${value_handle}.setAngle(${value_channel}, ${value_angle});\n`;
+  const code = `await ${value_handle}.setAngle(${value_channel}, ${value_angle}, ${settings.data.min_pulse}, ${settings.data.max_pulse});\n`;
   return code;
 };
 

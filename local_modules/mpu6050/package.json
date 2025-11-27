@@ -1,0 +1,7 @@
+{
+    "name": "@necora/mpu6050",
+    "version": "1.0.0",
+    "main": "mpu6050.js",
+    "private": true,
+    "license": "MIT"
+}
