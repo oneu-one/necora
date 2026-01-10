@@ -11,12 +11,12 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^39.2.4"
+    "electron": "^39.2.7"
   },
   "dependencies": {
-    "@blockly/field-angle": "^6.0.3",
-    "@blockly/field-colour": "^6.0.6",
-    "@blockly/field-slider": "^8.0.3",
+    "@blockly/field-angle": "^6.0.7",
+    "@blockly/field-colour": "^6.0.10",
+    "@blockly/field-slider": "^8.0.7",
     "@necora/amg8833": "file:local_modules/amg8833",
     "@necora/bme280": "file:local_modules/bme280",
     "@necora/mpu6050": "file:local_modules/mpu6050",

@@ -1,7 +1,7 @@
 const category_sensor = [
   {
     kind: "category",
-    name: "センサー",
+    name: "ライブラリ",
     cssConfig: {
       icon: "customIcon fas fa-microchip",
     },

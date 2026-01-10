@@ -123,9 +123,9 @@ exports.i2c_write_i2c_block_data = async (handle, reg, data, count = -1) => {
 exports.i2c_read_word_data = async (handle, reg) => {
   return await rg._i2c_read_word_data(sbc, handle, reg);
 };
-// exports.i2c_write_word_data = async (handle, reg, word_val) => {
-//   return await rg._i2c_write_word_data(sbc, handle, reg, word_val);
-// };
+exports.i2c_write_word_data = async (handle, reg, word_val) => {
+  return await rg._i2c_write_word_data(sbc, handle, reg, word_val);
+};
 // exports.i2c_read_device = async (handle, count) => {
 //   return new TextDecoder().decode(
 //     await rg._i2c_read_device(sbc, handle, count)

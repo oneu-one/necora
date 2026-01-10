@@ -4,7 +4,7 @@ import "./blocks/index.js"; // カスタムブロック定義
 class Settings {
   constructor() {
     this.data = {
-      version: 2,
+      version: 3,
       wsfname: "workspace.xml",
       host: "localhost",
       port: "8889",
@@ -12,6 +12,7 @@ class Settings {
       min_pulse: "130",
       max_pulse: "540",
       i2cdev: "1",
+      mascot: "./img/necora.png",
     };
   }
   saveToLS() {
@@ -195,6 +196,7 @@ function showSettings() {
   const fld_min_pulse = document.getElementById("min_pulse");
   const fld_max_pulse = document.getElementById("max_pulse");
   const fld_i2cdev = document.getElementById("i2cdev");
+  const fld_mascot = document.getElementById("mascot");
 
   fld_host.value = settings.data.host;
   fld_port.value = settings.data.port;
@@ -202,6 +204,7 @@ function showSettings() {
   fld_min_pulse.value = settings.data.min_pulse;
   fld_max_pulse.value = settings.data.max_pulse;
   fld_i2cdev.value = settings.data.i2cdev;
+  fld_mascot.value = settings.data.mascot;
 
   dialog.showModal();
 
@@ -215,6 +218,7 @@ function showSettings() {
       if (fld_min_pulse.value) settings.data.min_pulse = fld_min_pulse.value;
       if (fld_max_pulse.value) settings.data.max_pulse = fld_max_pulse.value;
       if (fld_i2cdev.value) settings.data.i2cdev = fld_i2cdev.value;
+      if (fld_mascot.value) settings.data.mascot = fld_mascot.value;
     }
     dialog.close();
     btn_save.removeEventListener("click", close_cb);
@@ -312,7 +316,7 @@ window.onload = () => {
   // ワークスペース復元
   wsFromLocal();
   // // 背景canvas
-  canvasBgImg("./img/tama.png", -1, -1);
+  canvasBgImg(settings.data.mascot, -1, -1);
 };
 // ウィンドウアンロード時実行
 window.addEventListener("beforeunload", () => {

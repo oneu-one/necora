@@ -13,34 +13,34 @@ class PAJ7620 {
     this.PAJ7620_ADDR_BASE = 0x00;
 
     //REGISTER BANK SELECT
-    this.PAJ7620_REGITER_BANK_SEL = PAJ7620_ADDR_BASE + 0xef; //W
+    this.PAJ7620_REGITER_BANK_SEL = this.PAJ7620_ADDR_BASE + 0xef; //W
 
     //DEVICE ID
     // this.PAJ7620_ID = 0x73;
 
     //REGISTER BANK 0
-    this.PAJ7620_ADDR_SUSPEND_CMD = PAJ7620_ADDR_BASE + 0x3; //W
-    this.PAJ7620_ADDR_GES_PS_DET_MASK_0 = PAJ7620_ADDR_BASE + 0x41; //RW
-    this.PAJ7620_ADDR_GES_PS_DET_MASK_1 = PAJ7620_ADDR_BASE + 0x42; //RW
-    this.PAJ7620_ADDR_GES_PS_DET_FLAG_0 = PAJ7620_ADDR_BASE + 0x43; //R
-    this.PAJ7620_ADDR_GES_PS_DET_FLAG_1 = PAJ7620_ADDR_BASE + 0x44; //R
-    this.PAJ7620_ADDR_STATE_INDICATOR = PAJ7620_ADDR_BASE + 0x45; //R
-    this.PAJ7620_ADDR_PS_HIGH_THRESHOLD = PAJ7620_ADDR_BASE + 0x69; //RW
-    this.PAJ7620_ADDR_PS_LOW_THRESHOLD = PAJ7620_ADDR_BASE + 0x6a; //RW
-    this.PAJ7620_ADDR_PS_APPROACH_STATE = PAJ7620_ADDR_BASE + 0x6b; //R
-    this.PAJ7620_ADDR_PS_RAW_DATA = PAJ7620_ADDR_BASE + 0x6c; //R
+    this.PAJ7620_ADDR_SUSPEND_CMD = this.PAJ7620_ADDR_BASE + 0x3; //W
+    this.PAJ7620_ADDR_GES_PS_DET_MASK_0 = this.PAJ7620_ADDR_BASE + 0x41; //RW
+    this.PAJ7620_ADDR_GES_PS_DET_MASK_1 = this.PAJ7620_ADDR_BASE + 0x42; //RW
+    this.PAJ7620_ADDR_GES_PS_DET_FLAG_0 = this.PAJ7620_ADDR_BASE + 0x43; //R
+    this.PAJ7620_ADDR_GES_PS_DET_FLAG_1 = this.PAJ7620_ADDR_BASE + 0x44; //R
+    this.PAJ7620_ADDR_STATE_INDICATOR = this.PAJ7620_ADDR_BASE + 0x45; //R
+    this.PAJ7620_ADDR_PS_HIGH_THRESHOLD = this.PAJ7620_ADDR_BASE + 0x69; //RW
+    this.PAJ7620_ADDR_PS_LOW_THRESHOLD = this.PAJ7620_ADDR_BASE + 0x6a; //RW
+    this.PAJ7620_ADDR_PS_APPROACH_STATE = this.PAJ7620_ADDR_BASE + 0x6b; //R
+    this.PAJ7620_ADDR_PS_RAW_DATA = this.PAJ7620_ADDR_BASE + 0x6c; //R
 
     //REGISTER BANK 1
-    this.PAJ7620_ADDR_PS_GAIN = PAJ7620_ADDR_BASE + 0x44; //RW
-    this.PAJ7620_ADDR_IDLE_S1_STEP_0 = PAJ7620_ADDR_BASE + 0x67; //RW
-    this.PAJ7620_ADDR_IDLE_S1_STEP_1 = PAJ7620_ADDR_BASE + 0x68; //RW
-    this.PAJ7620_ADDR_IDLE_S2_STEP_0 = PAJ7620_ADDR_BASE + 0x69; //RW
-    this.PAJ7620_ADDR_IDLE_S2_STEP_1 = PAJ7620_ADDR_BASE + 0x6a; //RW
-    this.PAJ7620_ADDR_OP_TO_S1_STEP_0 = PAJ7620_ADDR_BASE + 0x6b; //RW
-    this.PAJ7620_ADDR_OP_TO_S1_STEP_1 = PAJ7620_ADDR_BASE + 0x6c; //RW
-    this.PAJ7620_ADDR_OP_TO_S2_STEP_0 = PAJ7620_ADDR_BASE + 0x6d; //RW
-    this.PAJ7620_ADDR_OP_TO_S2_STEP_1 = PAJ7620_ADDR_BASE + 0x6e; //RW
-    this.PAJ7620_ADDR_OPERATION_ENABLE = PAJ7620_ADDR_BASE + 0x72; //RW
+    this.PAJ7620_ADDR_PS_GAIN = this.PAJ7620_ADDR_BASE + 0x44; //RW
+    this.PAJ7620_ADDR_IDLE_S1_STEP_0 = this.PAJ7620_ADDR_BASE + 0x67; //RW
+    this.PAJ7620_ADDR_IDLE_S1_STEP_1 = this.PAJ7620_ADDR_BASE + 0x68; //RW
+    this.PAJ7620_ADDR_IDLE_S2_STEP_0 = this.PAJ7620_ADDR_BASE + 0x69; //RW
+    this.PAJ7620_ADDR_IDLE_S2_STEP_1 = this.PAJ7620_ADDR_BASE + 0x6a; //RW
+    this.PAJ7620_ADDR_OP_TO_S1_STEP_0 = this.PAJ7620_ADDR_BASE + 0x6b; //RW
+    this.PAJ7620_ADDR_OP_TO_S1_STEP_1 = this.PAJ7620_ADDR_BASE + 0x6c; //RW
+    this.PAJ7620_ADDR_OP_TO_S2_STEP_0 = this.PAJ7620_ADDR_BASE + 0x6d; //RW
+    this.PAJ7620_ADDR_OP_TO_S2_STEP_1 = this.PAJ7620_ADDR_BASE + 0x6e; //RW
+    this.PAJ7620_ADDR_OPERATION_ENABLE = this.PAJ7620_ADDR_BASE + 0x72; //RW
 
     //PAJ7620_REGITER_BANK_SEL
     this.PAJ7620_BANK0 = 0;
@@ -309,7 +309,7 @@ class PAJ7620 {
     ];
   }
   async init(i2c_bus, i2c_addr, i2c_flags = 0) {
-    this.i2cHand = await rg.i2c_open(i2c_bus, i2c_addr, i2c_flags);
+    this.i2c_hand = await rg.i2c_open(i2c_bus, i2c_addr, i2c_flags);
     await rg.lgu_sleep(0.001);
     await this.paj7620SelectBank(this.BANK0);
     await this.paj7620SelectBank(this.BANK0);
@@ -328,18 +328,18 @@ class PAJ7620 {
         this.initRegisterArray[i][1]
       );
 
-    await this.paj7620SelectBank(BANK0);
+    await this.paj7620SelectBank(this.BANK0);
 
     console.log("Paj7620 initialize register finished.");
   }
   // Write a byte to a register on the Gesture sensor
   async paj7620WriteReg(addr, cmd) {
-    await rg.i2c_write_word_data(i2c_hand, addr, cmd);
+    await rg.i2c_write_word_data(this.i2c_hand, addr, cmd);
   }
 
   //Select a register bank on the Gesture Sensor
   async paj7620SelectBank(bank) {
-    if (bank == BANK0)
+    if (bank == this.BANK0)
       await this.paj7620WriteReg(
         this.PAJ7620_REGITER_BANK_SEL,
         this.PAJ7620_BANK0
@@ -348,7 +348,7 @@ class PAJ7620 {
 
   //Read a block of bytes of length "qty" starting at address "addr" from the Gesture sensor
   async paj7620ReadReg(addr, qty) {
-    return await rg.i2c_read_i2c_block_data(i2c_hand, addr, qty);
+    return await rg.i2c_read_i2c_block_data(this.i2c_hand, addr, qty);
   }
 
   async return_gesture() {
