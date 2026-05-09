@@ -101,15 +101,15 @@
   position: absolute;
 }
 
-#maindisplay {
+/* #maindisplay {
   display: none;
-}
+} */
 
 /* #subdisplay {
   display: none;
 } */
 
-.subdisplay {
+/* .subdisplay {
   width: 160px;
   height: 120px;
   position: absolute;
@@ -117,7 +117,7 @@
   bottom: 12px;
   border-radius: 4px;
   border: solid 4px white;
-}
+} */
 
 #canvas_bg {
   background-color: white;
@@ -129,20 +129,25 @@
   left: 6;
 }
 
-.grideye_canvas {
+/* .subcanvas {
   width: 160px;
   height: 160px;
-  border: 0px;
-}
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  border-radius: 4px;
+  border: solid 4px white;
 
-.game_fg {
+} */
+
+/* .game_fg {
   background-color: rgba(255, 255, 255, 0.6);
 }
 
 #gcanvas {
   background-color: rgba(255, 255, 255, 0.6);
-  /* display: none; */
-}
+  display: none;
+} */
 
 #display_area {
   position: relative;

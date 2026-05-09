@@ -931,11 +931,10 @@ javascript.javascriptGenerator.forBlock["grideye_close"] = function (
     "handle",
     Blockly.JavaScript.ORDER_ATOMIC
   );
-  const code = `await ${value_handle}.close();
-document.getElementById('display_area').removeChild(_grideye_canvas);
-`;
+  const code = `await ${value_handle}.close();\n`;
   return code;
 };
+// document.getElementById('display_area').removeChild(_grideye_canvas);
 
 /********************** */
 /** Grid-Eye 本体温度 ** */
@@ -1034,8 +1033,14 @@ javascript.javascriptGenerator.forBlock["grideye_canvas_show"] = function (
   var code = `const _grideye_canvas = document.createElement('canvas');
 _grideye_canvas.setAttribute('width', 8);
 _grideye_canvas.setAttribute('height', 8);
-_grideye_canvas.className = 'grideye_canvas';
 document.getElementById('display_area').appendChild(_grideye_canvas);
+_grideye_canvas.style.width = '160px';
+_grideye_canvas.style.height = '160px';
+_grideye_canvas.style.position = 'absolute';
+_grideye_canvas.style.right = '12px';
+_grideye_canvas.style.bottom = '12px';
+_grideye_canvas.style.border = '4px solid white';
+_grideye_canvas.style.borderRadius = '4px';
 const _grideye_ctx = _grideye_canvas.getContext('2d', {willReadFrequently: true});
 const _grideye_imgData = _grideye_ctx.createImageData(8, 8);
 `;
@@ -1131,8 +1136,8 @@ javascript.javascriptGenerator.forBlock["draw_grideyedata"] = function (
   lb = "0x" + colour_color_low.slice(5, 7);
   var code = `  const _color_range = [[${lr}, ${hr}], [${lg}, ${hg}], [${lb}, ${hb}]];
   let _grideye_data = ${value_amg8833data};//読み取りブロックを入力に直接接続できるようにする
-  for (let raw = 0; raw < _grideye_canvas.height; raw++) {
-      for (let col = 0; col < _grideye_canvas.width; col++) {
+  for (let raw = 0; raw < _grideye_imgData.height; raw++) {
+      for (let col = 0; col < _grideye_imgData.width; col++) {
           for (let rgb = 0; rgb < 3; rgb++) {
               let pixel = ${functionName}(_grideye_data[raw][col], ${value_temp_low}, ${value_temp_high}, _color_range[rgb][0], _color_range[rgb][1]);
               _grideye_imgData.data[((raw * _grideye_canvas.width * 4) + col * 4) + rgb] = pixel;

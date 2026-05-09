@@ -220,21 +220,25 @@ javascript.javascriptGenerator.forBlock["face_init"] = function (
   Blockly.JavaScript.provideFunction_("require_blazeface", [
     `const _blazeface = require('@tensorflow-models/blazeface');`,
   ]);
-  var code = [
-    'const _videoEl = document.createElement("video");',
-    "_videoEl.setAttribute('autoplay', '');",
-    "_videoEl.setAttribute('muted', '');",
-    "_videoEl.style.visibility = 'hidden';",
-    "_videoEl.className = 'subdisplay';",
-    "_videoEl.width = 160;",
-    "_videoEl.height = 120;",
-    `document.getElementById('display_area').appendChild(_videoEl);`,
-    `const _displaySize = { width: _videoEl.width, height: _videoEl.height };`,
-    "const _stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: _displaySize });",
-    "_videoEl.srcObject = _stream;",
-    `const _model = await _blazeface.load();`,
-    "",
-  ].join("\n");
+  var code = `const _videoEl = document.createElement("video");
+_videoEl.setAttribute('autoplay', '');
+_videoEl.setAttribute('muted', '');
+_videoEl.style.visibility = 'hidden';
+_videoEl.width = 160;
+_videoEl.height = 120;
+_videoEl.style.width = '160px';
+_videoEl.style.height = '120px';
+_videoEl.style.position = 'absolute';
+_videoEl.style.right = '12px';
+_videoEl.style.bottom = '12px';
+_videoEl.style.border = '4px solid white';
+_videoEl.style.borderRadius = '4px';
+document.getElementById('display_area').appendChild(_videoEl);
+const _displaySize = { width: _videoEl.width, height: _videoEl.height };
+const _stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: _displaySize });
+_videoEl.srcObject = _stream;
+const _model = await _blazeface.load();
+`;
   return code;
 };
 Blockly.Blocks["face_display"] = {
@@ -254,16 +258,20 @@ javascript.javascriptGenerator.forBlock["face_display"] = function (
   block,
   generator
 ) {
-  var code = [
-    "_videoEl.style.visibility = 'visible';",
-    `const _overlay = document.createElement('canvas');`,
-    `_overlay.setAttribute('width', _videoEl.width);`,
-    `_overlay.setAttribute('height', _videoEl.height);`,
-    `_overlay.className = 'subdisplay';`,
-    `document.getElementById('display_area').appendChild(_overlay);`,
-    `const _overlay_ctx = _overlay.getContext('2d');`,
-    "",
-  ].join("\n");
+  var code = `_videoEl.style.visibility = 'visible';
+const _overlay = document.createElement('canvas');
+_overlay.setAttribute('width', _videoEl.width);
+_overlay.setAttribute('height', _videoEl.height);
+_overlay.style.width = '160px';
+_overlay.style.height = '120px';
+_overlay.style.position = 'absolute';
+_overlay.style.right = '12px';
+_overlay.style.bottom = '12px';
+_overlay.style.border = '4px solid white';
+_overlay.style.borderRadius = '4px';
+document.getElementById('display_area').appendChild(_overlay);
+const _overlay_ctx = _overlay.getContext('2d');
+`;
   return code;
 };
 Blockly.Blocks["face_detect"] = {
