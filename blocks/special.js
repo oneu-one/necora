@@ -187,11 +187,13 @@ javascript.javascriptGenerator.forBlock["sleep"] = function (block, generator) {
     "sec",
     Blockly.JavaScript.ORDER_ATOMIC
   );
-  var functionName = Blockly.JavaScript.provideFunction_("_sleep", [
-    "const " + Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ + " = sec =>",
-    "new Promise(r => setTimeout(r, sec * 1000));",
-  ]);
-  var code = `await ${functionName}(${value_sec});\n`;
+  // var functionName = Blockly.JavaScript.provideFunction_("_sleep", [
+  //   "const " + Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ + " = sec =>",
+  //   "new Promise(r => setTimeout(r, sec * 1000));",
+  // ]);
+  Blockly.JavaScript.provideFunction_("import_sleep", 'const { _sleep } = require("@necora/sleep");');
+  // var code = `await ${functionName}(${value_sec});\n`;
+  var code = `await _sleep(${value_sec});\n`;
   return code;
 };
 python.pythonGenerator.forBlock["sleep"] = function (block, generator) {

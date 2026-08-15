@@ -33,13 +33,27 @@ const category_multimedia = [
       },
       {
         kind: "block",
+        type: "voicevox",
+        inputs: {
+          text: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "音声合成のテストをしているのだ！",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
         type: "yukkuri",
         inputs: {
           text: {
             shadow: {
               type: "text",
               fields: {
-                TEXT: "ゆっくりしていってね！",
+                TEXT: "漢字も読めます。",
               },
             },
           },

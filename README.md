@@ -1,9 +1,9 @@
 # NECoRA
 
-Nodejs, Electron, blockly : Code generator - Runtime Application
+Nodejs, Electron, blockly : COde generator - Runtime Application
 
 『ネコラ』 は、Google Blockly ライブラリを使用した、Raspberry Pi 上で動作するブロックプログラム開発・実行環境です。  
-インストール方法・操作・サンプルなどは『[ネコラ開発部](https://necora.cc)』にて公開予定。
+インストール方法・操作・サンプルなどは『[ネコラ開発部](https://dd.necora.cc)』にて公開予定。
 
 ### 免責
 

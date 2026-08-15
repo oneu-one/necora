@@ -1,6 +1,6 @@
 {
   "name": "necora",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -11,35 +11,40 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "39.8.8"
+    "electron": "^43.4.0"
   },
   "dependencies": {
-    "@blockly/field-angle": "^6.0.9",
-    "@blockly/field-colour": "^6.0.12",
-    "@blockly/field-slider": "^8.0.9",
+    "@blockly/field-angle": "^13.2.0",
+    "@blockly/field-colour": "^13.2.0",
+    "@blockly/field-slider": "^13.2.0",
     "@necora/amg8833": "file:local_modules/amg8833",
     "@necora/bme280": "file:local_modules/bme280",
     "@necora/mpu6050": "file:local_modules/mpu6050",
     "@necora/paj7620": "file:local_modules/paj7620",
     "@necora/pca9685": "file:local_modules/pca9685",
     "@necora/rgpio": "file:local_modules/rgpio",
-    "@necora/servo": "file:local_modules/servo",
+    "@necora/sleep": "file:local_modules/sleep",
     "@necora/ssd1306": "file:local_modules/ssd1306",
     "@necora/text2png": "file:local_modules/text2png",
+    "@necora/voicevox": "file:local_modules/voicevox",
     "@tensorflow-models/blazeface": "^0.1.0",
     "@tensorflow-models/knn-classifier": "^1.2.6",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
-    "@tensorflow/tfjs-node": "^4.22.0",
-    "axios": "^1.15.1",
-    "blockly": "^12.5.1",
+    "@tensorflow/tfjs-backend-webgpu": "^4.22.0",
+    "axios": "^1.19.0",
+    "blockly": "^13.2.1",
     "canvas": "^3.2.3",
     "dracula-prism": "^2.1.16",
-    "js-beautify": "1.15.4",
+    "js-beautify": "^2.0.3",
     "pngjs": "^7.0.0",
     "prismjs": "^1.30.0"
   },
-  "volta": {
-    "node": "22.21.1"
+  "allowScripts": {
+    "canvas@3.2.3": true,
+    "core-js@3.29.1": true,
+    "electron@39.8.8": true,
+    "protobufjs@6.8.9": true,
+    "@tensorflow/tfjs-node@4.22.0": true
   }
 }

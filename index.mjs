@@ -26,7 +26,7 @@ class Settings {
       if (data.version != this.data.version) {
         fukidashi(
           "バージョンアップのため設定が初期化されました。\n設定を確認してください。",
-          10
+          10,
         );
         showSettings();
       } else {
@@ -47,6 +47,21 @@ const playSound = (sound_name) => {
     audioElement.play();
   });
 };
+
+// サウンドファイル再生（フルパス指定）（await 使用可）
+function playSoundFile(url) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(url);
+    audio.onended = () => {
+      resolve(); // 再生が終わったら完了
+    };
+    audio.onerror = (err) => {
+      reject(err); // エラー時
+    };
+    // 再生（ブラウザの自動再生制限に注意）
+    audio.play().catch(reject);
+  });
+}
 
 // OK,Cancel ２択のダイアログを表示
 function confirmdlg(title, message, callback) {
@@ -83,7 +98,7 @@ const newWorkspace = () => {
         workspace.clear();
         settings.data.wsfname = "workspace.xml";
       }
-    }
+    },
   );
 };
 
@@ -112,15 +127,16 @@ const path = {
 // 関数呼び出しに await を挿入（ブロック定義自体を上書き？）
 javascript.javascriptGenerator.forBlock["procedures_callreturn"] = function (
   block,
-  generator
+  generator,
 ) {
   // Call a procedure with a return value.
   var funcName = generator.nameDB_.getName(
     block.getFieldValue("NAME"),
-    Blockly.PROCEDURE_CATEGORY_NAME
+    Blockly.PROCEDURE_CATEGORY_NAME,
   );
   var args = [];
-  var variables = block.getVars();
+  // var variables = block.getVars(); // Deprecated
+  const variables = block.getVarModels();
   for (var i = 0; i < variables.length; i++) {
     args[i] =
       generator.valueToCode(block, "ARG" + i, javascript.Order.NONE) || "null";
@@ -264,7 +280,7 @@ async function loadWorkspaceFromFile() {
       const xml_text = await file.text();
       Blockly.Xml.domToWorkspace(
         Blockly.utils.xml.textToDom(xml_text),
-        workspace
+        workspace,
       );
       settings.data.wsfname = file.name;
     } else {
@@ -281,7 +297,7 @@ async function saveWorkspaceAs() {
     if ("showSaveFilePicker" in window) {
       // showSaveFilePicker は使える？
       const xml_text = Blockly.utils.xml.domToText(
-        Blockly.Xml.workspaceToDom(workspace)
+        Blockly.Xml.workspaceToDom(workspace),
       );
       const handle = await window.showSaveFilePicker({
         suggestedName: settings.data.wsfname,
@@ -424,7 +440,7 @@ function fukidashi(text, sec) {
     radius,
     180 * toRadianCoefficient,
     270 * toRadianCoefficient,
-    false
+    false,
   ); // 左上
   context.arc(
     boxOrigin.x + width - radius,
@@ -432,7 +448,7 @@ function fukidashi(text, sec) {
     radius,
     270 * toRadianCoefficient,
     0,
-    false
+    false,
   ); // 右上
   context.arc(
     boxOrigin.x + width - radius,
@@ -440,7 +456,7 @@ function fukidashi(text, sec) {
     radius,
     0,
     90 * toRadianCoefficient,
-    false
+    false,
   ); // 右下
   context.arc(
     boxOrigin.x + radius,
@@ -448,7 +464,7 @@ function fukidashi(text, sec) {
     radius,
     90 * toRadianCoefficient,
     180 * toRadianCoefficient,
-    false
+    false,
   ); // 左下
   context.closePath();
   context.fill();
@@ -472,7 +488,7 @@ function fukidashi(text, sec) {
     context.fillText(
       lineText,
       boxOrigin.x + padding,
-      boxOrigin.y + padding + size * (index + 1)
+      boxOrigin.y + padding + size * (index + 1),
     );
   });
 
@@ -499,7 +515,10 @@ function fukidashi(text, sec) {
 
 // GPIOモジュールリセット
 function rgreset() {
-  if (typeof require === "function") require("@necora/rgpio").stop();
+  if (global._sbc !== undefined) {
+    global._sbc.stop();
+    global._sbc = undefined;
+  }
 }
 
 /******** モジュール ********/
@@ -513,6 +532,7 @@ export {
   saveWorkspaceAs,
   fukidashi,
   playSound,
+  playSoundFile,
   rgreset,
   settings,
   fdRecentBox,
@@ -622,7 +642,7 @@ class CustomCategory extends Blockly.ToolboxCategory {
   setSelected(isSelected) {
     // We do not store the label span on the category, so use getElementsByClassName.
     var labelDom = this.rowDiv_.getElementsByClassName(
-      "blocklyToolboxCategoryLabel"
+      "blocklyToolboxCategoryLabel",
     )[0];
     if (isSelected) {
       // Change the background color of the div to white.
@@ -641,7 +661,7 @@ class CustomCategory extends Blockly.ToolboxCategory {
     Blockly.utils.aria.setState(
       /** @type {!Element} */ (this.htmlDiv_),
       Blockly.utils.aria.State.SELECTED,
-      isSelected
+      isSelected,
     );
   }
 }
@@ -649,7 +669,7 @@ Blockly.registry.register(
   Blockly.registry.Type.TOOLBOX_ITEM,
   Blockly.ToolboxCategory.registrationName,
   CustomCategory,
-  true
+  true,
 );
 
 //============ カスタマイズ ここまで ===============

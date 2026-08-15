@@ -19,7 +19,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["colour_picker"] = function (
   block,
-  generator
+  generator,
 ) {
   const code = generator.quote_(block.getFieldValue("COLOUR"));
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -110,7 +110,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["coupycolor_picker"] = function (
   block,
-  generator
+  generator,
 ) {
   const code = generator.quote_(block.getFieldValue("COLOUR"));
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -148,6 +148,69 @@ javascript.javascriptGenerator.forBlock["play_sound"] = function (block) {
   return code;
 };
 
+/************** */
+/** VoiceVox ** */
+/************** */
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "voicevox",
+    tooltip:
+      "無料で使える中品質なテキスト読み上げ・歌声合成ソフトウェア「VOICEVOX」を使用しておしゃべりします。\n音声の生成には VOICEVOX が起動している必要があります。\n音声の生成には時間がかかります。「キャッシュ」にチェックを入れると、同一文章の２回目以降の読み上げが高速になります。\n「キャッシュ」のチェックを外すと音声を強制的に再生成します。",
+    helpUrl: "",
+    message0: "%1 で %2 と言う %3 キャッシュ %4",
+    args0: [
+      {
+        type: "field_dropdown",
+        name: "speacker",
+        options: [
+          ["ずんだもん（ノーマル）", "3"],
+          ["ずんだもん（ささやき）", "22"],
+          ["四国めたん（あまあま）", "0"],
+        ],
+      },
+      {
+        type: "input_value",
+        name: "text",
+        check: "String",
+      },
+      {
+        type: "field_checkbox",
+        name: "cache",
+        checked: true,
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "multimedia_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["voicevox"] = function (
+  block,
+  generator,
+) {
+  const dropdown_speacker = block.getFieldValue("speacker");
+  const value_text = generator.valueToCode(
+    block,
+    "text",
+    javascript.Order.ATOMIC,
+  );
+  const checkbox_cache = block.getFieldValue("cache");
+  Blockly.JavaScript.provideFunction_("require_voicevox", [
+    `const _voicevox = require('@necora/voicevox');`,
+  ]);
+  const cache_value = checkbox_cache === "TRUE" ? "true" : "false";
+
+  const code = `const fpath = await _voicevox(${value_text}, ${dropdown_speacker}, ${cache_value});
+await _necora.playSoundFile(fpath);
+`;
+  return code;
+};
+
 /****************** */
 /** ゆっくりボイス ** */
 /****************** */
@@ -155,9 +218,9 @@ Blockly.defineBlocksWithJsonArray([
   {
     type: "yukkuri",
     tooltip:
-      "日本語音声合成プログラム「AquesTalk Pi」を使用してしゃべります。※非同期",
+      "日本語音声合成プログラム「AquesTalk Player」を使用してしゃべります。",
     helpUrl: "",
-    message0: "ゆっくりで %1 とおしゃべりする %2 ▼",
+    message0: "ゆっくりで %1 とおしゃべりする %2",
     args0: [
       {
         type: "input_value",
@@ -177,23 +240,20 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["yukkuri"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_text = generator.valueToCode(
     block,
     "text",
-    javascript.Order.NONE
+    javascript.Order.NONE,
   );
-  const code = `const _yukkuri  = require('child_process').spawn("./bin/aquestalkpi/AquesTalkPi -g 50 ${value_text} | aplay", { shell: true });
-_yukkuri.stderr.on('data', (data) => {
-  console.error(\`stderr: \${data}\`);
-});
-_yukkuri.on('close', (code) => {
-  console.log(\`child process exited with code \${code}\`);
-});`;
+  Blockly.JavaScript.provideFunction_("require_execFileAsync", [
+    'const execFileAsync = require("util").promisify(require("child_process").execFile);',
+  ]);
+  const code = `await execFileAsync("/Applications/AquesTalkPlayer.app/Contents/MacOS/AquesTalkPlayer -T ${value_text}", { shell: true });\n`;
   return code;
 };
-
+// ./bin/aquestalkpi/AquesTalkPi -g 50 ${value_text} | aplay
 /******************** */
 /** Face Detection ** */
 /******************** */
@@ -205,17 +265,20 @@ Blockly.Blocks["face_init"] = {
     this.setNextStatement(true, null);
     this.setStyle("multimedia_blocks");
     this.setTooltip(
-      "Blazeface detector モデルによる顔検出を開始します。最初に実行してください"
+      "Blazeface detector モデルによる顔検出を開始します。最初に実行してください",
     );
     this.setHelpUrl("");
   },
 };
 javascript.javascriptGenerator.forBlock["face_init"] = function (
   block,
-  generator
+  generator,
 ) {
   Blockly.JavaScript.provideFunction_("require_tfjs", [
-    `const _tf = require('@tensorflow/tfjs-node');`,
+    `const _tf = require('@tensorflow/tfjs');`,
+  ]);
+  Blockly.JavaScript.provideFunction_("import_backend", [
+    `const _backend = require('@tensorflow/tfjs-backend-webgpu');`,
   ]);
   Blockly.JavaScript.provideFunction_("require_blazeface", [
     `const _blazeface = require('@tensorflow-models/blazeface');`,
@@ -237,6 +300,7 @@ document.getElementById('display_area').appendChild(_videoEl);
 const _displaySize = { width: _videoEl.width, height: _videoEl.height };
 const _stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: _displaySize });
 _videoEl.srcObject = _stream;
+await _tf.setBackend('webgpu');
 const _model = await _blazeface.load();
 `;
   return code;
@@ -249,14 +313,14 @@ Blockly.Blocks["face_display"] = {
     this.setNextStatement(true, null);
     this.setStyle("multimedia_blocks");
     this.setTooltip(
-      "カメラの映像を画像エリアに表示します。必須ではないブロックです。"
+      "カメラの映像を画像エリアに表示します。必須ではないブロックです。",
     );
     this.setHelpUrl("");
   },
 };
 javascript.javascriptGenerator.forBlock["face_display"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = `_videoEl.style.visibility = 'visible';
 const _overlay = document.createElement('canvas');
@@ -284,7 +348,7 @@ Blockly.Blocks["face_detect"] = {
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setTooltip(
-      "顔検出を実行します。検出結果はリストになります。顔の位置は「顔の座標」ブロックで参照します。"
+      "顔検出を実行します。検出結果はリストになります。顔の位置は「顔の座標」ブロックで参照します。",
     );
     this.setHelpUrl("");
     this.setStyle("multimedia_blocks");
@@ -292,12 +356,12 @@ Blockly.Blocks["face_detect"] = {
 };
 javascript.javascriptGenerator.forBlock["face_detect"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_preditions = Blockly.JavaScript.valueToCode(
     block,
     "preditions",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `${value_preditions} = await _model.estimateFaces(_videoEl, false);`;
   return code;
@@ -314,7 +378,7 @@ Blockly.Blocks["face_location"] = {
           ["右座標", "bottomRight[0]"],
           ["下座標", "bottomRight[1]"],
         ]),
-        "member"
+        "member",
       );
     this.setInputsInline(true);
     this.setOutput(true, "Number");
@@ -325,12 +389,12 @@ Blockly.Blocks["face_location"] = {
 };
 javascript.javascriptGenerator.forBlock["face_location"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_prediction = Blockly.JavaScript.valueToCode(
     block,
     "prediction",
-    Blockly.JavaScript.ORDER_NONE
+    Blockly.JavaScript.ORDER_NONE,
   );
   var dropdown_member = block.getFieldValue("member");
   var code = `${value_prediction}.${dropdown_member}`;
@@ -347,7 +411,7 @@ Blockly.Blocks["face_drawbox"] = {
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setTooltip(
-      "顔検出結果をビデオ画面に描画します。「ビデオを表示」ブロックが必要です。"
+      "顔検出結果をビデオ画面に描画します。「ビデオを表示」ブロックが必要です。",
     );
     this.setHelpUrl("");
     this.setStyle("multimedia_blocks");
@@ -355,12 +419,12 @@ Blockly.Blocks["face_drawbox"] = {
 };
 javascript.javascriptGenerator.forBlock["face_drawbox"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_prediction = Blockly.JavaScript.valueToCode(
     block,
     "prediction",
-    Blockly.JavaScript.ORDER_NONE
+    Blockly.JavaScript.ORDER_NONE,
   );
   var checkbox_with_landmark = block.getFieldValue("with_landmark") === "TRUE";
   var code = `const _start = ${value_prediction}.topLeft;

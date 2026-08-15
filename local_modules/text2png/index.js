@@ -1,3 +1,9 @@
+/***
+* 文字列を PNG 画像に変換する
+* JS 純正の Canvas ではフォントにアンチエイリアスがかかるため代わりに node-canvas を使用する
+* Usage: text2png(text, font, fontsize, color)
+***/
+
 const nodecanvas = require("canvas");
 
 module.exports = function (text, font, size, color) {

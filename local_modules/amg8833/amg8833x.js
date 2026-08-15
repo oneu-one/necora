@@ -1,29 +1,33 @@
-// import * as rg from "@necoge/rgpio";
-const rg = require("@necora/rgpio");
+/*** 8x8 赤外線アレイセンサ AMG8833 ***/
 
 class AMG8833 {
-  constructor() {
+  constructor(sbc) {
+    this.sbc = sbc;
     this.i2c_hand = null;
   }
 
   async init(i2c_bus, i2c_address, i2c_flags = 0) {
-    let r = await rg.i2c_open(i2c_bus, i2c_address, i2c_flags);
+    let r = await this.sbc.i2c_open(i2c_bus, i2c_address, i2c_flags);
+    if (r < 0) {
+      console.log(`AMG8833 i2c_open failed`);
+      return r;
+    }
     this.i2c_hand = r;
-    let r1 = await rg.i2c_write_byte_data(this.i2c_hand, 0x00, 0x00); //Normal mode
-    let r2 = await rg.i2c_write_byte_data(this.i2c_hand, 0x02, 0x00); //10FPS
+    let r1 = await this.sbc.i2c_write_byte_data(this.i2c_hand, 0x00, 0x00); //Normal mode
+    let r2 = await this.sbc.i2c_write_byte_data(this.i2c_hand, 0x02, 0x00); //10FPS
     if (r1 < 0 || r2 < 0) console.log(`AMG8833 initialize failed`);
     return this.i2c_hand;
   }
   // 本体温度
   async read_thermistor() {
-    let temp = await rg.i2c_read_word_data(this.i2c_hand, 0x0e);
+    let temp = await this.sbc.i2c_read_word_data(this.i2c_hand, 0x0e);
     return temp * 0.0625;
   }
   // 温度データ読み取り
   async read_temp_array() {
     let lines = [];
     for (let i = 0; i < 8; i++) {
-      let data = await rg.i2c_read_i2c_block_data(
+      let [bytes, data] = await this.sbc.i2c_read_i2c_block_data(
         this.i2c_hand,
         0x80 + 0x10 * i,
         16
@@ -39,7 +43,7 @@ class AMG8833 {
   // 接続解除
   async close() {
     if (this.i2c_hand !== null) {
-      await rg.i2c_close(this.i2c_hand);
+      await this.sbc.i2c_close(this.i2c_hand);
     }
   }
 }

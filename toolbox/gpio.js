@@ -10,20 +10,24 @@ const category_gpio = [
     contents: [
       {
         kind: "label",
-        text: "GPIOChipデバイス",
+        text: "rgpio",
       },
       {
         kind: "block",
-        type: "rgpiod_start",
+        type: "rgpio_sbc",
       },
       {
         kind: "block",
-        type: "rgpiod_stop",
+        type: "sbc_stop",
       },
-      // {
-      //   kind: "block",
-      //   type: "gpiochip_open",
-      // },
+      {
+        kind: "label",
+        text: "GPIOChip",
+      },
+      {
+        kind: "block",
+        type: "gpiochip_open",
+      },
       // {
       //   kind: "block",
       //   type: "gpiochip_close",
@@ -89,12 +93,6 @@ const category_gpio = [
         fields: {
           level: "1",
         },
-      },
-      {
-        kind: "label",
-        text: "PWM",
-        "web-line": "4.0",
-        "web-line-width": "200",
       },
       {
         kind: "block",
@@ -208,6 +206,66 @@ const category_gpio = [
           },
         },
       },
+      {
+        "kind": "label",
+        "text": "Serial",
+        "web-line": "4.0",
+        "web-line-width": "200"
+      },
+      {
+        "kind": "block",
+        "type": "serial_open",
+        "fields": {
+          "baud": "9600"
+        },
+        "inputs": {
+          "port": {
+            "shadow": {
+              "type": "text",
+              "fields": {
+                "TEXT": "/dev/ttyS0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "block",
+        "type": "serial_close",
+      },
+      {
+        "kind": "block",
+        "type": "serial_data_available",
+      },
+      {
+        "kind": "block",
+        "type": "serial_read",
+        "inputs": {
+          "count": {
+            "shadow": {
+              "type": "math_number",
+              "fields": {
+                "NUM": "0"
+              }
+            }
+          }
+        }
+      },
+      {
+        "kind": "block",
+        "type": "serial_write",
+        "inputs": {
+          "data": {
+            "shadow": {
+              "type": "text",
+              "fields": {
+                "TEXT": "hello"
+              }
+            }
+          }
+        }
+      },
+
       {
         kind: "label",
         text: "_",

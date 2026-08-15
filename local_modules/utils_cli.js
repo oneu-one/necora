@@ -1,6 +1,3 @@
-// スリープ
-const sleep = (sec) => new Promise((r) => setTimeout(r, sec * 1000));
-
 // ファイルパス連結
 // Usage: path.join([path1, path2, path3, ...])
 const path = {
@@ -15,4 +12,4 @@ const path = {
   },
 };
 
-export { sleep, path };
+export { path };

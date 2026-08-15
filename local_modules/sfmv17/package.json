@@ -1,0 +1,7 @@
+{
+  "name": "@necora/sfmv17",
+  "version": "1.0.0",
+  "main": "sfmv17.js",
+  "private": true,
+  "license": "MIT"
+}

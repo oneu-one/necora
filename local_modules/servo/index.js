@@ -1,12 +1,17 @@
+/***
+ハードウェア PWM
+PWM チップデバイスに直接読み書き
+Raspberry Pi 5B のみ動作確認済
+***/
+
 const fs = require("fs").promises;
 
 class SERVO {
   constructor(chipNo, channel) {
     this.CHANNEL = channel.toString();
     this.EXPORT_PATH = `/sys/class/pwm/pwmchip${chipNo.toString()}/export`;
-    this.PWM_PATH = `/sys/class/pwm/pwmchip${chipNo.toString()}/pwm${
-      this.CHANNEL
-    }`;
+    this.PWM_PATH = `/sys/class/pwm/pwmchip${chipNo.toString()}/pwm${this.CHANNEL
+      }`;
     this.ENABLE_PATH = `${this.PWM_PATH}/enable`;
     this.PERIOD_PATH = `${this.PWM_PATH}/period`;
     this.DUTY_PATH = `${this.PWM_PATH}/duty_cycle`;

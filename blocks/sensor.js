@@ -46,7 +46,7 @@ javascript.javascriptGenerator.forBlock["inertial_init"] = function (
   Blockly.JavaScript.provideFunction_("require_mpu6050", [
     `const { MPU6050 } = require('@necora/mpu6050');`,
   ]);
-  const code = `${variable_mpu6050} = new MPU6050();
+  const code = `${variable_mpu6050} = new MPU6050(_sbc);
   await ${variable_mpu6050}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -200,7 +200,7 @@ javascript.javascriptGenerator.forBlock["pca9685_start"] = function (
     `const { PCA9685 } = require('@necora/pca9685');`,
   ]);
 
-  const code = `${variable_handle} = new PCA9685();
+  const code = `${variable_handle} = new PCA9685(_sbc);
   await ${variable_handle}.init(${settings.data.i2cdev}, ${dropdown_addr});
   await ${variable_handle}.setPWMFreq(50);\n`;
   return code;
@@ -360,7 +360,7 @@ javascript.javascriptGenerator.forBlock["oled_init"] = function (
   ]);
   let size_x, size_y;
   [size_x, size_y] = dropdown_disp_size.split("x");
-  const code = `${variable_handle} = new SSD1306({bus: ${settings.data.i2cdev},address: ${dropdown_i2c_addr}, width: ${size_x}, height: ${size_y}});
+  const code = `${variable_handle} = new SSD1306(_sbc, {bus: ${settings.data.i2cdev},address: ${dropdown_i2c_addr}, width: ${size_x}, height: ${size_y}});
 await ${variable_handle}.initialize();`;
   return code;
 };
@@ -674,11 +674,9 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
     `const _text2png = require("@necora/text2png");`,
   ]);
   const oledfont = dropdown_font.split(",");
-  const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${
-    oledfont[0]
-  }', ${
-    oledfont[1]
-  }, '${dropdown_color}')), ${value_x}, ${value_y}, ${checkbox_sync.toLowerCase()});`;
+  const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${oledfont[0]
+    }', ${oledfont[1]
+    }, '${dropdown_color}')), ${value_x}, ${value_y}, ${checkbox_sync.toLowerCase()});`;
   return code;
 };
 /****************************** */
@@ -708,7 +706,7 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
 //     Blockly.JavaScript.provideFunction_(
 //         'require_sfmv17', [`const _sfm = require('@ocoge/sfmv17');`]
 //     );
-//     var code = `await _sfm.init(_rg, ${value_port}, 115200);\n`;
+//     var code = `await _sfm.init(_sbc, ${value_port}, 115200);\n`;
 //     return code;
 // };
 
@@ -755,7 +753,7 @@ javascript.javascriptGenerator.forBlock["gesture_init"] = function (
   Blockly.JavaScript.provideFunction_("require_paj7620", [
     `const { PAJ7620 } = require('@necora/paj7620');`,
   ]);
-  const code = `${variable_paj7620} = new PAJ7620();
+  const code = `${variable_paj7620} = new PAJ7620(_sbc);
 await ${variable_paj7620}.init(${settings.data.i2cdev}, ${dropdown_i2c_addr});\n`;
   return code;
 };
@@ -892,7 +890,7 @@ javascript.javascriptGenerator.forBlock["grideye_init"] = function (
   Blockly.JavaScript.provideFunction_("import_amg8833", [
     `const {AMG8833} = require('@necora/amg8833');`,
   ]);
-  const code = `${variable_grid_eye} = new AMG8833();
+  const code = `${variable_grid_eye} = new AMG8833(_sbc);
   await ${variable_grid_eye}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -1121,8 +1119,8 @@ javascript.javascriptGenerator.forBlock["draw_grideyedata"] = function (
   );
   var functionName = Blockly.JavaScript.provideFunction_("_mapVal", [
     "const " +
-      Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
-      " = (val, inMin, inMax, outMin, outMax) => {",
+    Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
+    " = (val, inMin, inMax, outMin, outMax) => {",
     `return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;`,
     "}",
   ]);
@@ -1171,7 +1169,10 @@ javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
   generator
 ) {
   Blockly.JavaScript.provideFunction_("import_ts", [
-    `const _tf = require('@tensorflow/tfjs-node')`,
+    `const _tf = require('@tensorflow/tfjs');`,
+  ]);
+  Blockly.JavaScript.provideFunction_("import_backend", [
+    `const _backend = require('@tensorflow/tfjs-backend-webgpu');`,
   ]);
   Blockly.JavaScript.provideFunction_("import_mobilenet", [
     `const _mobilenet = require('@tensorflow-models/mobilenet');`,
@@ -1179,7 +1180,8 @@ javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
   Blockly.JavaScript.provideFunction_("import_knn", [
     `const _knnClassifier = require('@tensorflow-models/knn-classifier');`,
   ]);
-  var code = `  const _net = await _mobilenet.load({ version: 1, alpha: 0.25 }); // 高速・低精度
+  var code = `await _tf.setBackend('webgpu');
+const _net = await _mobilenet.load({ version: 1, alpha: 0.25 }); // 高速・低精度
 const _classifier = _knnClassifier.create();
 console.log(_tf.getBackend());
 `;
@@ -1388,7 +1390,7 @@ javascript.javascriptGenerator.forBlock["bme280_init"] = function (
   Blockly.JavaScript.provideFunction_("import_bme280", [
     `const {BME280} = require('@necora/bme280');`,
   ]);
-  const code = `${variable_bme280} = new BME280();
+  const code = `${variable_bme280} = new BME280(_sbc);
   await ${variable_bme280}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -1464,93 +1466,93 @@ javascript.javascriptGenerator.forBlock["bme280_close"] = function (
   return code;
 };
 
-/*********************************** */
-/*** サーボモータ (Hardware PWM 出力) ***/
-/*********************************** */
-Blockly.defineBlocksWithJsonArray([
-  {
-    type: "servo_start",
-    tooltip: "使用できる GPIO 番号は次のコマンドで調査 : $ pinctl | grep PWM",
-    helpUrl: "",
-    message0: "サーボ出力を開始 %1",
-    args0: [
-      {
-        type: "input_dummy",
-        name: "NAME",
-      },
-    ],
-    previousStatement: null,
-    nextStatement: null,
-    style: "sensor_blocks",
-    inputsInline: true,
-  },
-]);
-javascript.javascriptGenerator.forBlock["servo_start"] = function (
-  block,
-  generator
-) {
-  Blockly.JavaScript.provideFunction_("require_servo", [
-    `const {SERVO} = require('@necora/servo');`,
-  ]);
+// /*********************************** */
+// /*** サーボモータ (Hardware PWM 出力) ***/
+// /*********************************** */
+// Blockly.defineBlocksWithJsonArray([
+//   {
+//     type: "servo_start",
+//     tooltip: "使用できる GPIO 番号は次のコマンドで調査 : $ pinctl | grep PWM",
+//     helpUrl: "",
+//     message0: "サーボ出力を開始 %1",
+//     args0: [
+//       {
+//         type: "input_dummy",
+//         name: "NAME",
+//       },
+//     ],
+//     previousStatement: null,
+//     nextStatement: null,
+//     style: "sensor_blocks",
+//     inputsInline: true,
+//   },
+// ]);
+// javascript.javascriptGenerator.forBlock["servo_start"] = function (
+//   block,
+//   generator
+// ) {
+//   Blockly.JavaScript.provideFunction_("require_servo", [
+//     `const {SERVO} = require('@necora/servo');`,
+//   ]);
 
-  const code = `const _servo = new SERVO(${settings.data.pwmchip}, ${settings.data.pwmchan});
-await _servo.start();`;
-  return code;
-};
-/*** 停止 */
-Blockly.defineBlocksWithJsonArray([
-  {
-    type: "servo_stop",
-    tooltip: "サーボモータ使用後は必ず停止してください。",
-    helpUrl: "",
-    message0: "サーボモータを停止 %1",
-    args0: [
-      {
-        type: "input_dummy",
-        name: "NAME",
-      },
-    ],
-    previousStatement: null,
-    nextStatement: null,
-    style: "sensor_blocks",
-  },
-]);
-javascript.javascriptGenerator.forBlock["servo_stop"] = function (
-  block,
-  generator
-) {
-  const code = `await _servo.stop();`;
-  return code;
-};
-/*** 回転 */
-registerFieldAngle();
-Blockly.defineBlocksWithJsonArray([
-  {
-    type: "servo_angle",
-    tooltip: "",
-    helpUrl: "",
-    message0: "サーボモータの角度を %1 にする %2",
-    args0: [
-      {
-        type: "field_angle",
-        name: "ang",
-        value: 90,
-      },
-      {
-        type: "input_dummy",
-        name: "NAME",
-      },
-    ],
-    previousStatement: null,
-    nextStatement: null,
-    style: "sensor_blocks",
-  },
-]);
-javascript.javascriptGenerator.forBlock["servo_angle"] = function (
-  block,
-  generator
-) {
-  const angle_ang = block.getFieldValue("ang");
-  const code = `await _servo.angle(${angle_ang});`;
-  return code;
-};
+//   const code = `const _servo = new SERVO(${settings.data.pwmchip}, ${settings.data.pwmchan});
+// await _servo.start();`;
+//   return code;
+// };
+// /*** 停止 */
+// Blockly.defineBlocksWithJsonArray([
+//   {
+//     type: "servo_stop",
+//     tooltip: "サーボモータ使用後は必ず停止してください。",
+//     helpUrl: "",
+//     message0: "サーボモータを停止 %1",
+//     args0: [
+//       {
+//         type: "input_dummy",
+//         name: "NAME",
+//       },
+//     ],
+//     previousStatement: null,
+//     nextStatement: null,
+//     style: "sensor_blocks",
+//   },
+// ]);
+// javascript.javascriptGenerator.forBlock["servo_stop"] = function (
+//   block,
+//   generator
+// ) {
+//   const code = `await _servo.stop();`;
+//   return code;
+// };
+// /*** 回転 */
+// registerFieldAngle();
+// Blockly.defineBlocksWithJsonArray([
+//   {
+//     type: "servo_angle",
+//     tooltip: "",
+//     helpUrl: "",
+//     message0: "サーボモータの角度を %1 にする %2",
+//     args0: [
+//       {
+//         type: "field_angle",
+//         name: "ang",
+//         value: 90,
+//       },
+//       {
+//         type: "input_dummy",
+//         name: "NAME",
+//       },
+//     ],
+//     previousStatement: null,
+//     nextStatement: null,
+//     style: "sensor_blocks",
+//   },
+// ]);
+// javascript.javascriptGenerator.forBlock["servo_angle"] = function (
+//   block,
+//   generator
+// ) {
+//   const angle_ang = block.getFieldValue("ang");
+//   const code = `await _servo.angle(${angle_ang});`;
+//   return code;
+// };

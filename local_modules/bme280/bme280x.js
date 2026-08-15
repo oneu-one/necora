@@ -1,7 +1,8 @@
-const rg = require("@necora/rgpio");
+/*** 温湿度気圧センサ BME280 ***/
 
 class BME280 {
-  constructor() {
+  constructor(sbc) {
+    this.sbc = sbc;
     // 宣言だけ、後に使用
     this.i2cHand = null;
     this.cal = null;
@@ -42,13 +43,13 @@ class BME280 {
   }
 
   async init(i2c_bus, i2c_address, i2c_flags = 0) {
-    this.i2cHand = await rg.i2c_open(i2c_bus, i2c_address, i2c_flags);
+    this.i2cHand = await this.sbc.i2c_open(i2c_bus, i2c_address, i2c_flags);
 
     let r;
-    r = await rg.i2c_write_byte_data(this.i2cHand, this.REGISTER_CHIPID, 0);
+    r = await this.sbc.i2c_write_byte_data(this.i2cHand, this.REGISTER_CHIPID, 0);
     if (r < 0) return r;
 
-    let chipId = await rg.i2c_read_byte_data(
+    let chipId = await this.sbc.i2c_read_byte_data(
       this.i2cHand,
       this.REGISTER_CHIPID
     );
@@ -69,7 +70,7 @@ class BME280 {
       }
       // Humidity 16x oversampling
       //
-      let r = await rg.i2c_write_byte_data(
+      let r = await this.sbc.i2c_write_byte_data(
         this.i2cHand,
         this.REGISTER_CONTROL_HUM,
         0b00000101
@@ -77,7 +78,7 @@ class BME280 {
       if (r < 0) return `Humidity 16x oversampling error: ${r}`;
       // Temperture/pressure 16x oversampling, normal mode
       //
-      r = await rg.i2c_write_byte_data(
+      r = await this.sbc.i2c_write_byte_data(
         this.i2cHand,
         this.REGISTER_CONTROL,
         0b10110111
@@ -95,7 +96,7 @@ class BME280 {
   //
   async reset() {
     const POWER_ON_RESET_CMD = 0xb6;
-    let r = await rg.i2c_write_byte_data(
+    let r = await this.sbc.i2c_write_byte_data(
       this.i2cHand,
       this.REGISTER_RESET,
       POWER_ON_RESET_CMD
@@ -110,7 +111,7 @@ class BME280 {
   //
   async close() {
     if (this.i2cHand >= 0) {
-      await rg.i2c_close(this.i2cHand);
+      await this.sbc.i2c_close(this.i2cHand);
       this.i2cHand = null;
     }
   }
@@ -122,7 +123,7 @@ class BME280 {
 
     // Grab temperature, humidity, and pressure in a single read
     //
-    let buffer = await rg.i2c_read_i2c_block_data(
+    let [bytes, buffer] = await this.sbc.i2c_read_i2c_block_data(
       this.i2cHand,
       this.REGISTER_PRESSURE_DATA,
       8
@@ -176,8 +177,8 @@ class BME280 {
       ((this.cal.dig_H2 / 65536) *
         (1 +
           (this.cal.dig_H6 / 67108864) *
-            h *
-            (1 + (this.cal.dig_H3 / 67108864) * h)));
+          h *
+          (1 + (this.cal.dig_H3 / 67108864) * h)));
     h = h * (1 - (this.cal.dig_H1 * h) / 524288);
 
     let humidity = h > 100 ? 100 : h < 0 ? 0 : h;
@@ -196,22 +197,22 @@ class BME280 {
   }
 
   async loadCalibration(callback) {
-    let buffer = await rg.i2c_read_i2c_block_data(
+    let [byts, buffer] = await this.sbc.i2c_read_i2c_block_data(
       this.i2cHand,
       this.REGISTER_DIG_T1,
       24
     );
     if (buffer) {
-      let h1 = await rg.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H1);
-      let h2 = await rg.i2c_read_word_data(this.i2cHand, this.REGISTER_DIG_H2);
-      let h3 = await rg.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H3);
-      let h4 = await rg.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H4);
-      let h5 = await rg.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H5);
-      let h5_1 = await rg.i2c_read_byte_data(
+      let h1 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H1);
+      let h2 = await this.sbc.i2c_read_word_data(this.i2cHand, this.REGISTER_DIG_H2);
+      let h3 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H3);
+      let h4 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H4);
+      let h5 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H5);
+      let h5_1 = await this.sbc.i2c_read_byte_data(
         this.i2cHand,
         this.REGISTER_DIG_H5 + 1
       );
-      let h6 = await rg.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H6);
+      let h6 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H6);
 
       this.cal = {
         dig_T1: this.uint16(buffer[1], buffer[0]),

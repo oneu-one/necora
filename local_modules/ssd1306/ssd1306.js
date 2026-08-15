@@ -1,26 +1,8 @@
-const rg = require("@necora/rgpio");
-
-// function buffer_concat(arrays) {
-//   // sum of individual array lengths
-//   let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-
-//   if (!arrays.length) return null;
-
-//   let result = new Uint8Array(totalLength);
-
-//   // for each array - copy it over result
-//   // next array is copied right after the previous one
-//   let length = 0;
-//   for (let array of arrays) {
-//     result.set(array, length);
-//     length += array.length;
-//   }
-
-//   return result;
-// }
+/*** SSD1306 OLED Display Driver ***/
 
 class SSD1306 {
-  constructor(opts) {
+  constructor(sbc, opts) {
+    this.sbc = sbc;
     this.HEIGHT = opts.height || 64;
     this.WIDTH = opts.width || 128;
     this.ADDRESS = opts.address || 0x3c;
@@ -200,9 +182,7 @@ class SSD1306 {
 
     // write buffer data
     const bufferToSend = Buffer.concat([Buffer.from([0x40]), this.buffer]);
-    // await this.wire.i2cWrite(this.ADDRESS, bufferToSend.length, bufferToSend);
-    // const bufferToSend = buffer_concat([Uint8Array.from([0x40]), this.buffer]);
-    await rg.i2c_write_device(this.i2c_hand, bufferToSend, bufferToSend.length);
+    await this.sbc.i2c_write_device(this.i2c_hand, bufferToSend);
   };
 
   /* ##################################################################################################
@@ -348,7 +328,6 @@ class SSD1306 {
 
   // write text to the oled
   writeString = async (font, size, string, color, wrap, sync = true) => {
-    // const immed = typeof sync === "undefined" ? true : sync;
     const wordArr = string.split(" ");
     const len = wordArr.length;
     // start x offset at cursor pos
@@ -405,7 +384,6 @@ class SSD1306 {
 
   // draw an RGBA image at the specified coordinates
   drawRGBAImage = async (image, dx, dy, sync = true) => {
-    // const immed = typeof sync === "undefined" ? true : sync;
     // translate image data to buffer
     let x, y, dataIndex, buffIndex, buffByte, bit, pixelByte;
     const dyp = this.WIDTH * Math.floor(dy / 8); // calc once
@@ -494,7 +472,12 @@ class SSD1306 {
 
   // Initialize the display
   initialize = async () => {
-    this.i2c_hand = await rg.i2c_open(this.BUS, this.ADDRESS, 0);
+    let r = await this.sbc.i2c_open(this.BUS, this.ADDRESS, 0);
+    if (r < 0) {
+      console.log(`AMG8833 i2c_open failed`);
+      return r;
+    }
+    this.i2c_hand = r;
 
     // sequence of bytes to Initialize with
     const initSeq = [
@@ -543,23 +526,15 @@ class SSD1306 {
     }
 
     const bufferForSend = Buffer.from([control, val]);
-    // const bufferForSend = new Uint8Array([control, val]);
-    // const bufferForSend = Uint8Array.from([control, val]);
 
     // send control and actual val
-    // await this.wire.i2cWrite(this.ADDRESS, 2, bufferForSend);
-    await rg.i2c_write_device(this.i2c_hand, bufferForSend);
+    await this.sbc.i2c_write_device(this.i2c_hand, bufferForSend);
   };
 
   // read a byte from the oled
   _readI2C = async () => {
-    let data = await rg.i2c_read_byte(this.i2c_hand);
-    // if(data < 0) data = 0;
+    let data = await this.sbc.i2c_read_byte(this.i2c_hand);
     return data > 0 ? data : 0;
-
-    // const buffer = Buffer.alloc(1);
-    // const { bytesRead, buffer: data } = await this.wire.i2cRead(this.ADDRESS, 1, buffer);
-    // return bytesRead > 0 ? data[0] : 0;
   };
 
   // sometimes the oled gets a bit busy with lots of bytes.
