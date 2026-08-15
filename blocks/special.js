@@ -25,12 +25,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["uint8array_from"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_arraylike = generator.valueToCode(
     block,
     "arrayLike",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `Uint8Array.from(${value_arraylike})`;
   return [code, javascript.Order.ATOMIC];
@@ -58,24 +58,15 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["hextodec"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_hex = Blockly.JavaScript.valueToCode(
     block,
     "hex",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `parseInt (${value_hex}, 16)`;
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
-};
-python.pythonGenerator.forBlock["hextodec"] = function (block, generator) {
-  var value_hex = Blockly.Python.valueToCode(
-    block,
-    "hex",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var code = `int(${value_hex}, 16)`;
-  return [code, Blockly.Python.ORDER_NONE];
 };
 
 /***************** */
@@ -93,24 +84,15 @@ Blockly.Blocks["bintodec"] = {
 };
 javascript.javascriptGenerator.forBlock["bintodec"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_bin = Blockly.JavaScript.valueToCode(
     block,
     "bin",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `parseInt (${value_bin}, 2)`;
   return [code, Blockly.JavaScript.ORDER_NONE];
-};
-python.pythonGenerator.forBlock["bintodec"] = function (block, generator) {
-  var value_bin = Blockly.Python.valueToCode(
-    block,
-    "bin",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var code = `int(${value_bin}, 2)`;
-  return [code, Blockly.Python.ORDER_NONE];
 };
 
 /******************* */
@@ -139,24 +121,15 @@ Blockly.Blocks["codechar"] = {
 };
 javascript.javascriptGenerator.forBlock["codechar"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_code = Blockly.JavaScript.valueToCode(
     block,
     "code",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `String.fromCharCode(${value_code})`;
   return [code, Blockly.JavaScript.ORDER_NONE];
-};
-python.pythonGenerator.forBlock["codechar"] = function (block, generator) {
-  var value_code = Blockly.Python.valueToCode(
-    block,
-    "code",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var code = `chr(${value_code})`;
-  return [code, Blockly.Python.ORDER_NONE];
 };
 
 /************* */
@@ -185,25 +158,18 @@ javascript.javascriptGenerator.forBlock["sleep"] = function (block, generator) {
   var value_sec = Blockly.JavaScript.valueToCode(
     block,
     "sec",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   // var functionName = Blockly.JavaScript.provideFunction_("_sleep", [
   //   "const " + Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ + " = sec =>",
   //   "new Promise(r => setTimeout(r, sec * 1000));",
   // ]);
-  Blockly.JavaScript.provideFunction_("import_sleep", 'const { _sleep } = require("@necora/sleep");');
+  Blockly.JavaScript.provideFunction_(
+    "import_sleep",
+    'const { _sleep } = require("@necora/sleep");',
+  );
   // var code = `await ${functionName}(${value_sec});\n`;
   var code = `await _sleep(${value_sec});\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["sleep"] = function (block, generator) {
-  var value_sec = Blockly.Python.valueToCode(
-    block,
-    "sec",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  Blockly.Python.provideFunction_("import_sleep", ["from utime import sleep"]);
-  var code = `sleep(${value_sec})\n`;
   return code;
 };
 
@@ -238,7 +204,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["async_iife"] = function (
   block,
-  generator
+  generator,
 ) {
   const statement_do = generator.statementToCode(block, "do");
   const code = `(async () => {
@@ -268,12 +234,12 @@ Blockly.Blocks["canvas_say"] = {
 };
 javascript.javascriptGenerator.forBlock["canvas_say"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_say = Blockly.JavaScript.valueToCode(
     block,
     "say",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_sec = block.getFieldValue("sec");
   var code = [
@@ -323,15 +289,15 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["prompt"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_ask = generator.valueToCode(
     block,
     "ask",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const variable_answer = generator.getVariableName(
-    block.getFieldValue("answer")
+    block.getFieldValue("answer"),
   );
   const statement_do = generator.statementToCode(block, "do");
   const code = `_necora.fukidashi(${value_ask}, 0);
@@ -413,12 +379,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["terminal_write"] = function (
   block,
-  generator
+  generator,
 ) {
   let value_text = generator.valueToCode(
     block,
     "text",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const checkbox_return = block.getFieldValue("return");
   if (checkbox_return === "TRUE") value_text += " + '\\n'";
@@ -446,7 +412,7 @@ Blockly.Blocks["control_button"] = {
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setTooltip(
-      'ディスプレイカラムにボタンを作成し、クリックのイベントリスナを定義します。テキストデータをひとつ、"title"属性値として設定・取り出しが可能です。保存したデータはマウスオーバーで確認できます。'
+      'ディスプレイカラムにボタンを作成し、クリックのイベントリスナを定義します。テキストデータをひとつ、"title"属性値として設定・取り出しが可能です。保存したデータはマウスオーバーで確認できます。',
     );
     this.setHelpUrl("");
     this.setStyle("special_blocks");
@@ -454,27 +420,27 @@ Blockly.Blocks["control_button"] = {
 };
 javascript.javascriptGenerator.forBlock["control_button"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_label = Blockly.JavaScript.valueToCode(
     block,
     "label",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_textcolor = Blockly.JavaScript.valueToCode(
     block,
     "textcolor",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_bgcolor = Blockly.JavaScript.valueToCode(
     block,
     "bgcolor",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_title = Blockly.JavaScript.valueToCode(
     block,
     "title",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var statements_do = Blockly.JavaScript.statementToCode(block, "do");
   var code = [
@@ -510,24 +476,24 @@ Blockly.Blocks["localstorage_save"] = {
     this.setNextStatement(true, null);
     this.setStyle("special_blocks");
     this.setTooltip(
-      "テキストデータをローカルストレージに名前を付けて保存します。名前は半角アルファベットと数字だけで指定してください。"
+      "テキストデータをローカルストレージに名前を付けて保存します。名前は半角アルファベットと数字だけで指定してください。",
     );
     this.setHelpUrl("");
   },
 };
 javascript.javascriptGenerator.forBlock["localstorage_save"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_keyvalue = Blockly.JavaScript.valueToCode(
     block,
     "keyValue",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_keyname = Blockly.JavaScript.valueToCode(
     block,
     "keyName",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `localStorage.setItem(${value_keyname}, ${value_keyvalue});\n`;
   return code;
@@ -551,12 +517,12 @@ Blockly.Blocks["localstorage_load"] = {
 };
 javascript.javascriptGenerator.forBlock["localstorage_load"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_keyname = Blockly.JavaScript.valueToCode(
     block,
     "keyName",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `localStorage.getItem(${value_keyname})`;
   return [code, Blockly.JavaScript.ORDER_NONE];
@@ -577,15 +543,12 @@ Blockly.Blocks["text_cr"] = {
 };
 javascript.javascriptGenerator.forBlock["text_cr"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "'\\r'";
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
 };
-python.pythonGenerator.forBlock["text_cr"] = function (block, generator) {
-  var code = "'\\r'";
-  return [code, Blockly.Python.ORDER_ATOMIC];
-};
+
 /*************** */
 /** Line Feed ** */
 /*************** */
@@ -601,7 +564,7 @@ Blockly.Blocks["text_lf"] = {
 };
 javascript.javascriptGenerator.forBlock["text_lf"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "'\\n'";
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -621,7 +584,7 @@ Blockly.Blocks["text_null"] = {
 };
 javascript.javascriptGenerator.forBlock["text_null"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "'\\0'";
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -642,7 +605,7 @@ Blockly.Blocks["text_cursor"] = {
 };
 javascript.javascriptGenerator.forBlock["text_cursor"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "'&#9611;'";
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -675,12 +638,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["console_log"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_text = generator.valueToCode(
     block,
     "text",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `require("electron").ipcRenderer.send('open_devtools');
 console.log(${value_text});`;

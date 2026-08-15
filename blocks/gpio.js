@@ -91,14 +91,9 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpiochip_open"] = function (
   block,
-  generator
+  generator,
 ) {
   const code = `const _gpio = await _sbc.gpiochip_open(${settings.data.gpiodev});\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["gpiochip_open"] = function (block, generator) {
-  Blockly.Python.provideFunction_("import_pin", ["from machine import Pin"]);
-  var code = `_pin = {}\n`; //
   return code;
 };
 /***************** */
@@ -117,16 +112,9 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpiochip_close"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "await _sbc.gpiochip_close(_gpio);\n";
-  return code;
-};
-python.pythonGenerator.forBlock["gpiochip_close"] = function (
-  block,
-  generator
-) {
-  var code = "";
   return code;
 };
 /********************** */
@@ -162,34 +150,15 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpio_claim_input"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_gpio = Blockly.JavaScript.valueToCode(
     block,
     "gpio",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var dropdown_lflag = block.getFieldValue("lflag");
   var code = `await _sbc.gpio_claim_input(_gpio, ${value_gpio}, _rgpio.SET_${dropdown_lflag});\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["gpio_claim_input"] = function (
-  block,
-  generator
-) {
-  var value_gpio = Blockly.Python.valueToCode(
-    block,
-    "gpio",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var dropdown_lflag = block.getFieldValue("lflag");
-  let lflag;
-  if (dropdown_lflag == "PULL_NONE") {
-    lflag = "None";
-  } else {
-    lflag = `Pin.${dropdown_lflag}`;
-  }
-  var code = `_pin[${value_gpio}] = Pin(${value_gpio}, Pin.IN, ${lflag})\n`;
   return code;
 };
 /*********************** */
@@ -215,28 +184,17 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpio_claim_output"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_gpio = Blockly.JavaScript.valueToCode(
     block,
     "gpio",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `await _sbc.gpio_claim_output(_gpio, ${value_gpio});\n`;
   return code;
 };
-python.pythonGenerator.forBlock["gpio_claim_output"] = function (
-  block,
-  generator
-) {
-  var value_gpio = Blockly.Python.valueToCode(
-    block,
-    "gpio",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var code = `_pin[${value_gpio}] = Pin(${value_gpio}, Pin.OUT)\n`;
-  return code;
-};
+
 /********************* */
 /** Read GPIO Value ** */
 /***********************/
@@ -260,24 +218,15 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpio_read"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_gpio = Blockly.JavaScript.valueToCode(
     block,
     "gpio",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `await _sbc.gpio_read(_gpio, ${value_gpio})`;
   return [code, Blockly.JavaScript.ORDER_NONE];
-};
-python.pythonGenerator.forBlock["gpio_read"] = function (block, generator) {
-  var value_gpio = Blockly.Python.valueToCode(
-    block,
-    "gpio",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var code = `_pin[${value_gpio}].value()`;
-  return [code, Blockly.Python.ORDER_NONE];
 };
 
 /*******************************************/
@@ -311,25 +260,15 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gpio_write"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_gpio = Blockly.JavaScript.valueToCode(
     block,
     "gpio",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var dropdown_level = block.getFieldValue("level");
   var code = `await _sbc.gpio_write(_gpio, ${value_gpio}, ${dropdown_level});\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["gpio_write"] = function (block, generator) {
-  var value_gpio = Blockly.Python.valueToCode(
-    block,
-    "gpio",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var dropdown_level = block.getFieldValue("level");
-  var code = `_pin[${value_gpio}].value(${dropdown_level})\n`;
   return code;
 };
 
@@ -370,22 +309,22 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["tx_pwm"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_gpio = generator.valueToCode(
     block,
     "gpio",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_freq = generator.valueToCode(
     block,
     "freq",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_duty = generator.valueToCode(
     block,
     "duty",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await _sbc.tx_pwm(_gpio, ${value_gpio}, ${value_freq}, ${value_duty});\n`;
   return code;
@@ -410,37 +349,18 @@ Blockly.Blocks["i2c_open"] = {
 };
 javascript.javascriptGenerator.forBlock["i2c_open"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_addr = Blockly.JavaScript.valueToCode(
     block,
     "addr",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var variable_i2c_hand = Blockly.JavaScript.nameDB_.getName(
     block.getFieldValue("i2c_hand"),
-    Blockly.Names.NameType.VARIABLE
+    Blockly.Names.NameType.VARIABLE,
   );
   var code = `${variable_i2c_hand} = await _sbc.i2c_open(${settings.data.i2cdev}, ${value_addr}, 0);\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["i2c_open"] = function (block, generator) {
-  var value_addr = Blockly.Python.valueToCode(
-    block,
-    "addr",
-    Blockly.Python.ORDER_ATOMIC
-  );
-  var variable_i2c_hand = Blockly.Python.nameDB_.getName(
-    block.getFieldValue("i2c_hand"),
-    Blockly.Names.NameType.VARIABLE
-  );
-  Blockly.Python.provideFunction_("import_pin", ["from machine import Pin"]);
-  Blockly.Python.provideFunction_("import_i2c", ["from machine import I2C"]);
-  var code = `if ${variable_i2c_hand} == None:
-  ${variable_i2c_hand} = {'hand': I2C(0,sda=Pin(0),scl=Pin(1)), 'addr': ${value_addr}}
-else:
-  ${variable_i2c_hand}['addr'] = ${value_addr}
-\n`;
   return code;
 };
 
@@ -472,18 +392,14 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["i2c_close"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_i2c_hand = generator.valueToCode(
     block,
     "i2c_hand",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await _sbc.i2c_close(${value_i2c_hand});\n`;
-  return code;
-};
-python.pythonGenerator.forBlock["i2c_close"] = function (block, generator) {
-  var code = ``;
   return code;
 };
 
@@ -518,34 +434,22 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["i2c_read_byte_data"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_i2c_hand = generator.valueToCode(
     block,
     "i2c_hand",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_reg = generator.valueToCode(
     block,
     "reg",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await _sbc.i2c_read_byte_data(${value_i2c_hand}, ${value_reg})`;
   return [code, javascript.Order.ATOMIC]; //Blockly.JavaScript.ORDER_ATOMIC
 };
-python.pythonGenerator.forBlock["i2c_read_byte_data"] = function (
-  block,
-  generator
-) {
-  const value_i2c_hand = generator.valueToCode(
-    block,
-    "i2c_hand",
-    python.Order.ATOMIC
-  );
-  const value_reg = generator.valueToCode(block, "reg", python.Order.ATOMIC);
-  const code = `\n`;
-  return [code, python.Order.ATOMIC];
-};
+
 /****************************************************************** */
 /** Writes a single byte to the specified register of the device ** */
 /****************************************************************** */
@@ -584,44 +488,27 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["i2c_write_byte_data"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_i2c_hand = generator.valueToCode(
     block,
     "i2c_hand",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_reg = generator.valueToCode(
     block,
     "reg",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_byte_val = generator.valueToCode(
     block,
     "byte_val",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await _sbc.i2c_write_byte_data(${value_i2c_hand}, ${value_reg}, ${value_byte_val});\n`;
   return code;
 };
-python.pythonGenerator.forBlock["i2c_write_byte_data"] = function (
-  block,
-  generator
-) {
-  const value_i2c_hand = generator.valueToCode(
-    block,
-    "i2c_hand",
-    python.Order.ATOMIC
-  );
-  const value_reg = generator.valueToCode(block, "reg", python.Order.ATOMIC);
-  const value_byte_val = generator.valueToCode(
-    block,
-    "byte_val",
-    python.Order.ATOMIC
-  );
-  const code = `${value_i2c_hand}['hand'].writeto_mem(${value_i2c_hand}['addr'], ${value_reg}, (${value_byte_val}).to_bytes(1,'big'))\n`;
-  return code;
-};
+
 /***************************************************************** */
 /** Writes up to 32 bytes to the specified register of the device. */
 /***************************************************************** */
@@ -661,48 +548,24 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["i2c_write_i2c_block_data"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_i2c_hand = generator.valueToCode(
     block,
     "i2c_hand",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_reg = generator.valueToCode(
     block,
     "reg",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_data = generator.valueToCode(
     block,
     "data",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await _sbc.i2c_write_i2c_block_data (${value_i2c_hand}, ${value_reg}, ${value_data});`;
-  return code;
-};
-python.pythonGenerator.forBlock["i2c_write_i2c_block_data"] = function (
-  block,
-  generator
-) {
-  const value_i2c_hand = generator.valueToCode(
-    block,
-    "i2c_hand",
-    python.Order.ATOMIC
-  );
-  var value_reg = Blockly.Python.valueToCode(block, "reg", python.Order.ATOMIC);
-  var value_data = Blockly.Python.valueToCode(
-    block,
-    "data",
-    python.Order.ATOMIC
-  );
-  const code = `if type(${value_data}) is str:
-  _bytedata = ${value_data}.encode()
-elif type(${value_data}) is list:
-  _bytedata = bytes(${value_data})
-else:
-  _bytedata = ${value_data}
-${value_i2c_hand}['hand'].writeto_mem(${value_i2c_hand}['addr'], ${value_reg}, _bytedata)\n`;
   return code;
 };
 
@@ -711,50 +574,53 @@ ${value_i2c_hand}['hand'].writeto_mem(${value_i2c_hand}['addr'], ${value_reg}, _
 /********************** */
 /** Open Serial Port ** */
 /********************** */
-Blockly.defineBlocksWithJsonArray([{
-  "type": "serial_open",
-  "message0": "ポート %1 のシリアルデバイスを %2 として速度 %3 で開く",
-  "args0": [
-    {
-      "type": "input_value",
-      "name": "port",
-      "check": "String"
-    },
-    {
-      "type": "field_variable",
-      "name": "ser_hand",
-      "variable": "シリアルデバイス"
-    },
-    {
-      "type": "field_dropdown",
-      "name": "baud",
-      "options": [
-        [
-          "9600bps",
-          "9600"
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "serial_open",
+    message0: "ポート %1 のシリアルデバイスを %2 として速度 %3 で開く",
+    args0: [
+      {
+        type: "input_value",
+        name: "port",
+        check: "String",
+      },
+      {
+        type: "field_variable",
+        name: "ser_hand",
+        variable: "シリアルデバイス",
+      },
+      {
+        type: "field_dropdown",
+        name: "baud",
+        options: [
+          ["9600bps", "9600"],
+          ["19200bps", "19200"],
+          ["115200bps", "115200"],
         ],
-        [
-          "19200bps",
-          "19200"
-        ],
-        [
-          "115200bps",
-          "115200"
-        ]
-      ]
-    }
-  ],
-  "inputsInline": true,
-  "previousStatement": null,
-  "nextStatement": null,
-  "tooltip": "シリアルデバイスに名前をつけて開きます。",
-  "helpUrl": "",
-  "style": "gpio_blocks"
-}]);
-javascript.javascriptGenerator.forBlock['serial_open'] = function (block, generator) {
-  var value_port = Blockly.JavaScript.valueToCode(block, 'port', Blockly.JavaScript.ORDER_ATOMIC);
-  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('ser_hand'), Blockly.Names.NameType.VARIABLE);
-  var dropdown_baud = block.getFieldValue('baud');
+      },
+    ],
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    tooltip: "シリアルデバイスに名前をつけて開きます。",
+    helpUrl: "",
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["serial_open"] = function (
+  block,
+  generator,
+) {
+  var value_port = Blockly.JavaScript.valueToCode(
+    block,
+    "port",
+    Blockly.JavaScript.ORDER_ATOMIC,
+  );
+  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(
+    block.getFieldValue("ser_hand"),
+    Blockly.Names.NameType.VARIABLE,
+  );
+  var dropdown_baud = block.getFieldValue("baud");
   var code = `${variable_ser_hand} = await _sbc.serial_open(${value_port}, ${dropdown_baud});\n`;
   return code;
 };
@@ -762,25 +628,33 @@ javascript.javascriptGenerator.forBlock['serial_open'] = function (block, genera
 /*********************** */
 /** Close Serial Port ** */
 /*********************** */
-Blockly.defineBlocksWithJsonArray([{
-  "type": "serial_close",
-  "message0": "%1 を閉じる",
-  "args0": [
-    {
-      "type": "field_variable",
-      "name": "ser_hand",
-      "variable": "シリアルデバイス"
-    }
-  ],
-  "inputsInline": true,
-  "previousStatement": null,
-  "nextStatement": null,
-  "tooltip": "シリアルデバイスとの通信を切断します。",
-  "helpUrl": "",
-  "style": "gpio_blocks"
-}]);
-javascript.javascriptGenerator.forBlock['serial_close'] = function (block, generator) {
-  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('ser_hand'), Blockly.Names.NameType.VARIABLE);
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "serial_close",
+    message0: "%1 を閉じる",
+    args0: [
+      {
+        type: "field_variable",
+        name: "ser_hand",
+        variable: "シリアルデバイス",
+      },
+    ],
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    tooltip: "シリアルデバイスとの通信を切断します。",
+    helpUrl: "",
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["serial_close"] = function (
+  block,
+  generator,
+) {
+  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(
+    block.getFieldValue("ser_hand"),
+    Blockly.Names.NameType.VARIABLE,
+  );
   var code = `await _sbc.serial_close(${variable_ser_hand});\n`;
   return code;
 };
@@ -788,33 +662,46 @@ javascript.javascriptGenerator.forBlock['serial_close'] = function (block, gener
 /************************ */
 /** Read Data from Serial */
 /************************ */
-Blockly.defineBlocksWithJsonArray([{
-  "type": "serial_read",
-  "message0": "%1 %2 から %3 文字受け取る",
-  "args0": [
-    {
-      "type": "field_variable",
-      "name": "ser_hand",
-      "variable": "シリアルデバイス"
-    },
-    {
-      "type": "input_dummy"
-    },
-    {
-      "type": "input_value",
-      "name": "count",
-      "check": "Number"
-    }
-  ],
-  "inputsInline": true,
-  "output": null,
-  "tooltip": "シリアルデバイスから指定したバイト数のデータを受け取ります。バイト数がわからない場合は十分に大きな数字（1000など）を入れましょう。",
-  "helpUrl": "",
-  "style": "gpio_blocks"
-}]);
-javascript.javascriptGenerator.forBlock['serial_read'] = function (block, generator) {
-  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('ser_hand'), Blockly.Names.NameType.VARIABLE);
-  var value_count = Blockly.JavaScript.valueToCode(block, 'count', Blockly.JavaScript.ORDER_ATOMIC);
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "serial_read",
+    message0: "%1 %2 から %3 文字受け取る",
+    args0: [
+      {
+        type: "field_variable",
+        name: "ser_hand",
+        variable: "シリアルデバイス",
+      },
+      {
+        type: "input_dummy",
+      },
+      {
+        type: "input_value",
+        name: "count",
+        check: "Number",
+      },
+    ],
+    inputsInline: true,
+    output: null,
+    tooltip:
+      "シリアルデバイスから指定したバイト数のデータを受け取ります。バイト数がわからない場合は十分に大きな数字（1000など）を入れましょう。",
+    helpUrl: "",
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["serial_read"] = function (
+  block,
+  generator,
+) {
+  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(
+    block.getFieldValue("ser_hand"),
+    Blockly.Names.NameType.VARIABLE,
+  );
+  var value_count = Blockly.JavaScript.valueToCode(
+    block,
+    "count",
+    Blockly.JavaScript.ORDER_ATOMIC,
+  );
   var code = `(await _sbc.serial_read(${variable_ser_hand}, ${value_count}))[1]`;
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
 };
@@ -822,34 +709,46 @@ javascript.javascriptGenerator.forBlock['serial_read'] = function (block, genera
 /************************** */
 /** Write Data to Serial ** */
 /************************** */
-Blockly.defineBlocksWithJsonArray([{
-  "type": "serial_write",
-  "message0": "%1 %2  に %3 を送信する",
-  "args0": [
-    {
-      "type": "field_variable",
-      "name": "ser_hand",
-      "variable": "シリアルデバイス"
-    },
-    {
-      "type": "input_dummy"
-    },
-    {
-      "type": "input_value",
-      "name": "data",
-      "check": "String"
-    }
-  ],
-  "inputsInline": true,
-  "previousStatement": null,
-  "nextStatement": null,
-  "tooltip": "シリアルデバイスにデータを送信します。",
-  "helpUrl": "",
-  "style": "gpio_blocks"
-}]);
-javascript.javascriptGenerator.forBlock['serial_write'] = function (block, generator) {
-  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('ser_hand'), Blockly.Names.NameType.VARIABLE);
-  var value_data = Blockly.JavaScript.valueToCode(block, 'data', Blockly.JavaScript.ORDER_ATOMIC);
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "serial_write",
+    message0: "%1 %2  に %3 を送信する",
+    args0: [
+      {
+        type: "field_variable",
+        name: "ser_hand",
+        variable: "シリアルデバイス",
+      },
+      {
+        type: "input_dummy",
+      },
+      {
+        type: "input_value",
+        name: "data",
+        check: "String",
+      },
+    ],
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    tooltip: "シリアルデバイスにデータを送信します。",
+    helpUrl: "",
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["serial_write"] = function (
+  block,
+  generator,
+) {
+  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(
+    block.getFieldValue("ser_hand"),
+    Blockly.Names.NameType.VARIABLE,
+  );
+  var value_data = Blockly.JavaScript.valueToCode(
+    block,
+    "data",
+    Blockly.JavaScript.ORDER_ATOMIC,
+  );
   // TODO: Assemble JavaScript into code variable.
   var code = `await _sbc.serial_write(${variable_ser_hand}, ${value_data});\n`;
   return code;
@@ -857,29 +756,36 @@ javascript.javascriptGenerator.forBlock['serial_write'] = function (block, gener
 /******************************************************************* */
 /** Returns the number of bytes available to be read from the device */
 /******************************************************************* */
-Blockly.defineBlocksWithJsonArray([{
-  "type": "serial_data_available",
-  "message0": "%1 から読み取り可能なデータのバイト数",
-  "args0": [
-    {
-      "type": "field_variable",
-      "name": "ser_hand",
-      "variable": "シリアルデバイス"
-    }
-  ],
-  "inputsInline": true,
-  "output": null,
-  "tooltip": "シリアルデバイスから現在読み取り可能なデータのバイト数を返します。",
-  "helpUrl": "",
-  "style": "gpio_blocks"
-}]);
-javascript.javascriptGenerator.forBlock['serial_data_available'] = function (block, generator) {
-  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('ser_hand'), Blockly.Names.NameType.VARIABLE);
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "serial_data_available",
+    message0: "%1 から読み取り可能なデータのバイト数",
+    args0: [
+      {
+        type: "field_variable",
+        name: "ser_hand",
+        variable: "シリアルデバイス",
+      },
+    ],
+    inputsInline: true,
+    output: null,
+    tooltip:
+      "シリアルデバイスから現在読み取り可能なデータのバイト数を返します。",
+    helpUrl: "",
+    style: "gpio_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["serial_data_available"] = function (
+  block,
+  generator,
+) {
+  var variable_ser_hand = Blockly.JavaScript.nameDB_.getName(
+    block.getFieldValue("ser_hand"),
+    Blockly.Names.NameType.VARIABLE,
+  );
   var code = `await _sbc.serial_data_available(${variable_ser_hand})`;
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
 };
-
-
 
 Blockly.defineBlocksWithJsonArray([
   {
