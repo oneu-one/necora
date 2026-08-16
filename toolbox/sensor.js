@@ -9,6 +9,84 @@ const category_sensor = [
     contents: [
       {
         kind: "label",
+        text: "指紋センサ SFM-V1.7",
+        "web-line": "4.0",
+        "web-line-width": "200",
+      },
+      {
+        kind: "block",
+        type: "sfmv17_init",
+        inputs: {
+          port: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "/dev/ttyS0",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
+        type: "sfmv17_stop",
+      },
+      {
+        kind: "block",
+        type: "sfmv17_setringcolor",
+        fields: {
+          start_color: "0x03",
+        },
+        fields: {
+          end_color: "0x07",
+        },
+        inputs: {
+          period_sec: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0.5",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
+        type: "sfmv17_getusercount",
+      },
+      {
+        kind: "block",
+        type: "sfmv17_recognize",
+      },
+      {
+        kind: "block",
+        type: "sfmv17_registration",
+        fields: {
+          step: "1",
+        },
+      },
+      {
+        kind: "block",
+        type: "sfmv17_deleteuser",
+        inputs: {
+          uid: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
+        type: "sfmv17_getimage",
+      },
+
+      {
+        kind: "label",
         text: "赤外線アレイセンサー（サーマルカメラ）AMG8833",
         "web-line": "4.0",
         "web-line-width": "200",

@@ -23,6 +23,7 @@
     "@necora/paj7620": "file:local_modules/paj7620",
     "@necora/pca9685": "file:local_modules/pca9685",
     "@necora/rgpio": "file:local_modules/rgpio",
+    "@necora/sfmv17": "file:local_modules/sfmv17",
     "@necora/sleep": "file:local_modules/sleep",
     "@necora/ssd1306": "file:local_modules/ssd1306",
     "@necora/text2png": "file:local_modules/text2png",

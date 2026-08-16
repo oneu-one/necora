@@ -55,11 +55,13 @@ class SFMV17 {
     let ackBuffer = Buffer.alloc(0); //Buffer.from([]);
     let timer = this.SFM_SERIAL_TIMEOUT;
     while (timer--) {
-      if ((await this.sbc.serial_data_available(this.ser_hand)) > 0) {
-        ackBuffer = Buffer.concat([
-          ackBuffer,
-          await this.sbc.serial_read(this.ser_hand, 0),
-        ]);
+      const available = await this.sbc.serial_data_available(this.ser_hand);
+      if (available > 0) {
+        const [bytes, rbuf] = await this.sbc.serial_read(
+          this.ser_hand,
+          available,
+        );
+        ackBuffer = Buffer.concat([ackBuffer, rbuf]);
       } else if (ackBuffer.length >= 8) {
         // 1/100秒待ってデバイス側にデータが残っていないか再チェック
         // await delay(10);
@@ -116,7 +118,7 @@ class SFMV17 {
       0xc3,
       start_color,
       end_color,
-      period
+      period,
     );
     return q3;
   };
@@ -149,7 +151,7 @@ class SFMV17 {
         0x01,
         (uid >> 8) & 0xff,
         uid & 0xff,
-        this.SFM_DEFAULT_USERROLE
+        this.SFM_DEFAULT_USERROLE,
       );
       if (q3 == this.SFM_ACK_SUCCESS) return 0;
       else return -1;
@@ -193,7 +195,7 @@ class SFMV17 {
         0x04,
         (uid >> 8) & 0xff,
         uid & 0xff,
-        this.SFM_DEFAULT_USERROLE
+        this.SFM_DEFAULT_USERROLE,
       );
     if (q3 == this.SFM_ACK_SUCCESS) return 0;
     else return -1;
@@ -207,6 +209,8 @@ class SFMV17 {
     }
   };
 }
+
+module.exports = { SFMV17 };
 
 /**
  * This library is forked from https://github.com/Matrixchung/SFM-V1.7/

@@ -1,5 +1,385 @@
 import { settings } from "../index.mjs";
 
+/****************************** */
+/** SFM-V1.7 Fingerprint Sensor */
+/****************************** */
+
+// 初期化
+
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_init",
+    tooltip: "指紋センサ SFM-V1.7 とのシリアル通信を開始します。",
+    helpUrl: "",
+    message0: "指紋センサー(シリアルポート %1 )を %2 として開いて初期化 %3",
+    args0: [
+      {
+        type: "input_value",
+        name: "port",
+        check: "String",
+      },
+      {
+        type: "field_variable",
+        name: "sfmv17",
+        variable: "指紋センサー",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_init"] = function (
+  block,
+  generator,
+) {
+  const value_port = generator.valueToCode(
+    block,
+    "port",
+    javascript.Order.ATOMIC,
+  );
+  const variable_sfmv17 = generator.getVariableName(
+    block.getFieldValue("sfmv17"),
+  );
+  Blockly.JavaScript.provideFunction_("require_sfmv17", [
+    `const {SFMV17} = require('@necora/sfmv17');`,
+  ]);
+  const code = `${variable_sfmv17} = new SFMV17(_sbc);
+await ${variable_sfmv17}.init(${value_port}, 115200);\n`;
+  return code;
+};
+
+// リングカラー
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_setringcolor",
+    tooltip:
+      "指紋センサの LED リングの色を一定周期で切り替えます。周期は 0.3 秒から 2 秒までを指定できます。",
+    helpUrl: "",
+    message0: "指紋センサー %1 の LED リング色： %2 〜 %3 周期 %4 秒 %5",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+      },
+      {
+        type: "field_dropdown",
+        name: "start_color",
+        options: [
+          ["OFF", "0x07"],
+          ["赤", "0x03"],
+          ["緑", "0x05"],
+          ["青", "0x06"],
+          ["黄", "0x01"],
+          ["紫", "0x02"],
+          ["青緑（シアン）", "0x04"],
+        ],
+      },
+      {
+        type: "field_dropdown",
+        name: "end_color",
+        options: [
+          ["OFF", "0x07"],
+          ["赤", "0x03"],
+          ["緑", "0x05"],
+          ["青", "0x06"],
+          ["黄", "0x01"],
+          ["紫", "0x02"],
+          ["青緑（シアン）", "0x04"],
+        ],
+      },
+      {
+        type: "input_value",
+        name: "period_sec",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_setringcolor"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const dropdown_start_color = block.getFieldValue("start_color");
+  const dropdown_end_color = block.getFieldValue("end_color");
+  const value_period_sec = generator.valueToCode(
+    block,
+    "period_sec",
+    javascript.Order.ATOMIC,
+  );
+  const code = `await ${value_handle}.setRingColor(${dropdown_start_color}, ${dropdown_end_color}, ${value_period_sec}*1000);\n`;
+  return code;
+};
+
+// 記録済みユーザ数取得
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_getusercount",
+    tooltip: "データベースに記録された指紋の登録数を返します。",
+    helpUrl: "",
+    message0: "指紋センサー %1 の指紋登録数 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    output: "Number",
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_getusercount"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const code = `await ${value_handle}.getUserCount()`;
+  return [code, javascript.Order.NONE];
+};
+
+// 指紋認識
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_recognize",
+    tooltip:
+      "指紋を認識します。データベースの指紋と一致した場合その ID を、一致しなければ 0 を、エラーの場合は -1 を返します。",
+    helpUrl: "",
+    message0: "指紋センサー %1 で認識した指紋 ID %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    output: "Number",
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_recognize"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const code = `await ${value_handle}.recognition_1vN()`;
+  return [code, javascript.Order.ATOMIC];
+};
+
+// 指紋登録
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_registration",
+    tooltip:
+      "指紋をモジュール内データベースに登録します。ステップ１からステップ３を行います。",
+    helpUrl: "",
+    message0: "指紋センサーで %1 指紋登録 %2 %3",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "field_dropdown",
+        name: "step",
+        options: [
+          ["ステップ１", "1"],
+          ["ステップ２", "2"],
+          ["ステップ３", "3"],
+        ],
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    output: "Number",
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_registration"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const dropdown_step = block.getFieldValue("step");
+  const code = `await ${value_handle}.register_3c3r(${dropdown_step})`;
+  return [code, javascript.Order.ATOMIC];
+};
+
+// ユーザ削除 / ID 0 で全削除
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_deleteuser",
+    tooltip:
+      "登録済みの指紋から ID で指定したものを削除します。ID 0 を指定すると全部の指紋を削除します。",
+    helpUrl: "",
+    message0: "指紋センサー %1 から ID %2 の指紋を削除 %3",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_value",
+        name: "uid",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_deleteuser"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const value_uid = generator.valueToCode(
+    block,
+    "uid",
+    javascript.Order.ATOMIC,
+  );
+  const code = `await ${value_handle}.deleteUser(${value_uid});\n`;
+  return code;
+};
+
+// 指紋画像を取得
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_getimage",
+    tooltip:
+      "指紋センサで読み取った指紋をキャンバスに表示します。（接触部が白）",
+    helpUrl: "",
+    message0: "指紋センサー %1 で指紋画像を取得しキャンバスに表示 %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_getimage"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const code = `let _fingerprint = await ${value_handle}.getImage();
+let _ctx = document.getElementById('canvas').getContext('2d');
+let _imgdata = _ctx.createImageData(160, 160);
+for (let pixel=0; pixel<_fingerprint.length; pixel++){
+    for (let rgb=0; rgb<3; rgb++)
+        _imgdata.data[pixel*4+rgb] = 0xff-_fingerprint[pixel];
+    _imgdata.data[pixel*4+3] = 0xff;
+}
+_ctx.putImageData(_imgdata,8,8);
+`;
+  return code;
+};
+
+// 切断
+Blockly.defineBlocksWithJsonArray([
+  {
+    type: "sfmv17_stop",
+    tooltip: "指紋センサとのシリアル通信を終了してポートを開放します。",
+    helpUrl: "",
+    message0: "指紋センサー %1 との接続を閉じる %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "handle",
+        check: "Number",
+      },
+      {
+        type: "input_dummy",
+        name: "NAME",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    inputsInline: true,
+    style: "sensor_blocks",
+  },
+]);
+javascript.javascriptGenerator.forBlock["sfmv17_stop"] = function (
+  block,
+  generator,
+) {
+  const value_handle = generator.valueToCode(
+    block,
+    "handle",
+    javascript.Order.ATOMIC,
+  );
+  const code = `await ${value_handle}.stop();\n`;
+  return code;
+};
+
 /************************** */
 /** MPU6050 Inertial Sensor */
 /************************** */
@@ -37,11 +417,11 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["inertial_init"] = function (
   block,
-  generator
+  generator,
 ) {
   const dropdown_addr = block.getFieldValue("addr");
   const variable_mpu6050 = generator.getVariableName(
-    block.getFieldValue("mpu6050")
+    block.getFieldValue("mpu6050"),
   );
   Blockly.JavaScript.provideFunction_("require_mpu6050", [
     `const { MPU6050 } = require('@necora/mpu6050');`,
@@ -74,12 +454,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["inertial_stop"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_mpu6050 = generator.valueToCode(
     block,
     "mpu6050",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_mpu6050}.stop();\n`;
   return code;
@@ -108,12 +488,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["inertial_get_accel"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_mpu6050 = generator.valueToCode(
     block,
     "mpu6050",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_mpu6050}.get_accel_data()`;
   return [code, javascript.Order.NONE];
@@ -142,12 +522,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["inertial_get_gyro"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_mpu6050 = generator.valueToCode(
     block,
     "mpu6050",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_mpu6050}.get_gyro_data()`;
   return [code, javascript.Order.NONE];
@@ -190,11 +570,11 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["pca9685_start"] = function (
   block,
-  generator
+  generator,
 ) {
   const dropdown_addr = block.getFieldValue("addr");
   const variable_handle = generator.getVariableName(
-    block.getFieldValue("handle")
+    block.getFieldValue("handle"),
   );
   Blockly.JavaScript.provideFunction_("require_pca9685", [
     `const { PCA9685 } = require('@necora/pca9685');`,
@@ -231,12 +611,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["pca9685_stop"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.stop();
   await ${value_handle}.close();\n`;
@@ -279,22 +659,22 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["pca9685_setangle"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_channel = generator.valueToCode(
     block,
     "channel",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_angle = generator.valueToCode(
     block,
     "angle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.setAngle(${value_channel}, ${value_angle}, ${settings.data.min_pulse}, ${settings.data.max_pulse});\n`;
   return code;
@@ -348,12 +728,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_init"] = function (
   block,
-  generator
+  generator,
 ) {
   const dropdown_i2c_addr = block.getFieldValue("i2c_addr");
   const dropdown_disp_size = block.getFieldValue("disp_size");
   const variable_handle = generator.getVariableName(
-    block.getFieldValue("handle")
+    block.getFieldValue("handle"),
   );
   Blockly.JavaScript.provideFunction_("require_oled", [
     `const {SSD1306} = require('@necora/ssd1306');`,
@@ -390,12 +770,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_cleardisplay"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.clearDisplay(false);
 await ${value_handle}.update();`;
@@ -462,12 +842,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_drawline"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_x0 = generator.valueToCode(block, "x0", javascript.Order.ATOMIC);
   const value_y0 = generator.valueToCode(block, "y0", javascript.Order.ATOMIC);
@@ -506,12 +886,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_update"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.update();`;
   return code;
@@ -566,12 +946,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_drawpixel"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_x = generator.valueToCode(block, "x", javascript.Order.ATOMIC);
   const value_y = generator.valueToCode(block, "y", javascript.Order.ATOMIC);
@@ -650,17 +1030,17 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const value_text = generator.valueToCode(
     block,
     "text",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const dropdown_font = block.getFieldValue("font");
   const dropdown_color = block.getFieldValue("color");
@@ -674,9 +1054,11 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
     `const _text2png = require("@necora/text2png");`,
   ]);
   const oledfont = dropdown_font.split(",");
-  const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${oledfont[0]
-    }', ${oledfont[1]
-    }, '${dropdown_color}')), ${value_x}, ${value_y}, ${checkbox_sync.toLowerCase()});`;
+  const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${
+    oledfont[0]
+  }', ${
+    oledfont[1]
+  }, '${dropdown_color}')), ${value_x}, ${value_y}, ${checkbox_sync.toLowerCase()});`;
   return code;
 };
 /****************************** */
@@ -744,11 +1126,11 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gesture_init"] = function (
   block,
-  generator
+  generator,
 ) {
   const dropdown_i2c_addr = block.getFieldValue("i2c_addr");
   const variable_paj7620 = generator.getVariableName(
-    block.getFieldValue("paj7620")
+    block.getFieldValue("paj7620"),
   );
   Blockly.JavaScript.provideFunction_("require_paj7620", [
     `const { PAJ7620 } = require('@necora/paj7620');`,
@@ -785,12 +1167,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["gesture_read"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.return_gesture()`;
   return [code, javascript.Order.ATOMIC];
@@ -837,7 +1219,7 @@ Blockly.Blocks["gesture_stop"] = {
 };
 javascript.javascriptGenerator.forBlock["gesture_stop"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = "await _paj7620.stop();\n";
   return code;
@@ -881,11 +1263,11 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_init"] = function (
   block,
-  generator
+  generator,
 ) {
   var dropdown_addr = block.getFieldValue("addr");
   const variable_grid_eye = generator.getVariableName(
-    block.getFieldValue("grid_eye")
+    block.getFieldValue("grid_eye"),
   );
   Blockly.JavaScript.provideFunction_("import_amg8833", [
     `const {AMG8833} = require('@necora/amg8833');`,
@@ -922,12 +1304,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_close"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   const code = `await ${value_handle}.close();\n`;
   return code;
@@ -960,12 +1342,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_thermistor"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `await ${value_handle}.read_thermistor()`;
   return [code, Blockly.JavaScript.ORDER_NONE];
@@ -997,12 +1379,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_read"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `await ${value_handle}.read_temp_array()`;
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -1026,7 +1408,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_canvas_show"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = `const _grideye_canvas = document.createElement('canvas');
 _grideye_canvas.setAttribute('width', 8);
@@ -1098,29 +1480,29 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["draw_grideyedata"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_amg8833data = Blockly.JavaScript.valueToCode(
     block,
     "amg8833data",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var colour_color_high = block.getFieldValue("color_high");
   var value_temp_high = Blockly.JavaScript.valueToCode(
     block,
     "temp_high",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var colour_color_low = block.getFieldValue("color_low");
   var value_temp_low = Blockly.JavaScript.valueToCode(
     block,
     "temp_low",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var functionName = Blockly.JavaScript.provideFunction_("_mapVal", [
     "const " +
-    Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
-    " = (val, inMin, inMax, outMin, outMax) => {",
+      Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
+      " = (val, inMin, inMax, outMin, outMax) => {",
     `return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;`,
     "}",
   ]);
@@ -1166,7 +1548,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
   block,
-  generator
+  generator,
 ) {
   Blockly.JavaScript.provideFunction_("import_ts", [
     `const _tf = require('@tensorflow/tfjs');`,
@@ -1204,7 +1586,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_predict_class"] = function (
   block,
-  generator
+  generator,
 ) {
   var functionName = Blockly.JavaScript.provideFunction_(
     // left output にするための関数化
@@ -1219,7 +1601,7 @@ javascript.javascriptGenerator.forBlock["grideye_predict_class"] = function (
       `}`,
       `else return 0;`,
       `}`,
-    ]
+    ],
   );
   var code = `await ${functionName}(_grideye_canvas, _classifier, _net)`;
   return [code, Blockly.JavaScript.ORDER_NONE];
@@ -1249,12 +1631,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["grideye_add_example"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_class_id = Blockly.JavaScript.valueToCode(
     block,
     "class_id",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `_classifier.addExample (_net.infer(_grideye_canvas, true), ${value_class_id});`;
   return code;
@@ -1275,7 +1657,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["tensorset_stringify"] = function (
   block,
-  generator
+  generator,
 ) {
   var code = `JSON.stringify( Object.entries(_classifier.getClassifierDataset()).map(([label, data])=>[label, Array.from(data.dataSync()), data.shape]) )`;
   return [code, Blockly.JavaScript.ORDER_NONE];
@@ -1303,12 +1685,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["tensorset_parse"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_class_data_json = Blockly.JavaScript.valueToCode(
     block,
     "class_data_json",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   var code = `_classifier.setClassifierDataset( Object.fromEntries( JSON.parse(${value_class_data_json}).map(([label, data, shape])=>[label, _tf.tensor(data, shape)]) ) );`;
   return code;
@@ -1381,11 +1763,11 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["bme280_init"] = function (
   block,
-  generator
+  generator,
 ) {
   var dropdown_addr = block.getFieldValue("addr");
   const variable_bme280 = generator.getVariableName(
-    block.getFieldValue("bme280")
+    block.getFieldValue("bme280"),
   );
   Blockly.JavaScript.provideFunction_("import_bme280", [
     `const {BME280} = require('@necora/bme280');`,
@@ -1419,13 +1801,13 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["bme280_data"] = function (
   block,
-  generator
+  generator,
 ) {
   // const value_handle = generator.getVariableName(block.getFieldValue("handle"));
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   const code = `await ${value_handle}.readSensorData()`;
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
@@ -1455,12 +1837,12 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["bme280_close"] = function (
   block,
-  generator
+  generator,
 ) {
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    javascript.Order.ATOMIC
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.close();\n`;
   return code;
