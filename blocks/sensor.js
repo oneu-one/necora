@@ -209,7 +209,7 @@ Blockly.defineBlocksWithJsonArray([
     tooltip:
       "指紋をモジュール内データベースに登録します。ステップ１からステップ３を行います。",
     helpUrl: "",
-    message0: "指紋センサーで %1 指紋登録 %2 %3",
+    message0: "指紋センサー %1 に指紋登録 %2 %3",
     args0: [
       {
         type: "input_value",
@@ -688,7 +688,8 @@ javascript.javascriptGenerator.forBlock["pca9685_setangle"] = function (
 Blockly.defineBlocksWithJsonArray([
   {
     type: "oled_init",
-    tooltip: "I2C 接続の SSD1306 有機ELディスプレイを使えるようにします。",
+    tooltip:
+      "I2C 接続の SSD1306 有機ELディスプレイを使えるようにします。直後に「画面をクリア」を実行してください。",
     helpUrl: "",
     message0:
       "有機ELディスプレイ（アドレス %1 ，画面サイズ %2 ）を %3 として開いて初期化 %4",
@@ -1061,36 +1062,6 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
   }, '${dropdown_color}')), ${value_x}, ${value_y}, ${checkbox_sync.toLowerCase()});`;
   return code;
 };
-/****************************** */
-/** SFM-V1.7 Fingerprint Sensor */
-/****************************** */
-
-// // 初期化
-// Blockly.defineBlocksWithJsonArray([
-//   {
-//     "type": "oc_sfmv17_init",
-//     "message0": "指紋センサ（ポート %1 ）に接続",
-//     "args0": [
-//         {
-//             "type": "input_value",
-//             "name": "port",
-//             "check": "String"
-//         }
-//     ],
-//     "previousStatement": null,
-//     "nextStatement": null,
-//     "tooltip": "指紋センサ SFM-V1.7 とのシリアル通信を開始します。",
-//     "helpUrl": "",
-//     "style": "sensor_blocks"
-// }]);
-// javascript.javascriptGenerator.forBlock['oc_sfmv17_init'] = function (block, generator) {
-//     var value_port = generator.valueToCode(block, 'port', javascript.Order.ATOMIC);
-//     Blockly.JavaScript.provideFunction_(
-//         'require_sfmv17', [`const _sfm = require('@ocoge/sfmv17');`]
-//     );
-//     var code = `await _sfm.init(_sbc, ${value_port}, 115200);\n`;
-//     return code;
-// };
 
 /********** */
 /** PAJ7620 */
