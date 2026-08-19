@@ -1525,7 +1525,7 @@ javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
     `const _tf = require('@tensorflow/tfjs');`,
   ]);
   Blockly.JavaScript.provideFunction_("import_backend", [
-    `const _backend = require('@tensorflow/tfjs-backend-webgpu');`,
+    `const _backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
   ]);
   Blockly.JavaScript.provideFunction_("import_mobilenet", [
     `const _mobilenet = require('@tensorflow-models/mobilenet');`,
@@ -1533,7 +1533,7 @@ javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
   Blockly.JavaScript.provideFunction_("import_knn", [
     `const _knnClassifier = require('@tensorflow-models/knn-classifier');`,
   ]);
-  var code = `await _tf.setBackend('webgpu');
+  var code = `await _tf.setBackend('${settings.data.tfjs_backend}');
 const _net = await _mobilenet.load({ version: 1, alpha: 0.25 }); // 高速・低精度
 const _classifier = _knnClassifier.create();
 console.log(_tf.getBackend());

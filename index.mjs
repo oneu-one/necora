@@ -4,7 +4,7 @@ import "./blocks/index.js"; // カスタムブロック定義
 class Settings {
   constructor() {
     this.data = {
-      version: 3,
+      version: 2,
       wsfname: "workspace.xml",
       host: "localhost",
       port: "8889",
@@ -12,6 +12,7 @@ class Settings {
       min_pulse: "130",
       max_pulse: "540",
       i2cdev: "1",
+      tfjs_backend: "webgpu",
       mascot: "./img/necora.png",
     };
   }
@@ -212,6 +213,7 @@ function showSettings() {
   const fld_min_pulse = document.getElementById("min_pulse");
   const fld_max_pulse = document.getElementById("max_pulse");
   const fld_i2cdev = document.getElementById("i2cdev");
+  const fld_tfjs_backend = document.getElementById("webgpu");
   const fld_mascot = document.getElementById("mascot");
 
   fld_host.value = settings.data.host;
@@ -220,6 +222,11 @@ function showSettings() {
   fld_min_pulse.value = settings.data.min_pulse;
   fld_max_pulse.value = settings.data.max_pulse;
   fld_i2cdev.value = settings.data.i2cdev;
+  if (settings.data.tfjs_backend === "webgpu") {
+    document.getElementById("webgpu").checked = true;
+  } else {
+    document.getElementById("wasm").checked = true;
+  }
   fld_mascot.value = settings.data.mascot;
 
   dialog.showModal();
@@ -234,6 +241,10 @@ function showSettings() {
       if (fld_min_pulse.value) settings.data.min_pulse = fld_min_pulse.value;
       if (fld_max_pulse.value) settings.data.max_pulse = fld_max_pulse.value;
       if (fld_i2cdev.value) settings.data.i2cdev = fld_i2cdev.value;
+      if (document.getElementById("webgpu").checked)
+        settings.data.tfjs_backend = "webgpu";
+      if (document.getElementById("wasm").checked)
+        settings.data.tfjs_backend = "wasm";
       if (fld_mascot.value) settings.data.mascot = fld_mascot.value;
     }
     dialog.close();

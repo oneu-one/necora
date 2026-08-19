@@ -2,6 +2,7 @@
  * ローカルまたは同一ネットワーク上のシングルボードコンピュータで走る rgpiod デーモンに接続して
  * GPIO/I2C/Serial などを操作するためのモジュール
  * rgpio.py の一部を CommonJS に書き換え（コールバック・スレッディングは省略）
+ * 大部分を Gemini ちゃんにお任せした。ご了承ください。
  *
  * 例：
  * const rgpio = require('@necora/rgpio');
@@ -616,14 +617,14 @@ async function _lg_command_ext_nolock(
 
 // rgpio.cjs を require してから最初に呼び出す関数
 // sbc クラスを作成して初期化（rgpiodへ接続など）してからクラスのインスタンスを返す
-// sbc() の名前でエクスポート（ちょっとした工夫）
+// sbc() の名前でエクスポート（書式を rgpio Python に準拠）
 async function create_sbc(
   host = process.env.LG_ADDR || "localhost",
   port = process.env.LG_PORT || 8889,
   show_errors = true,
 ) {
   const instance = new _sbc();
-  await instance.init(host, port, show_errors);
+  await instance._init(host, port, show_errors);
   return instance;
 }
 
@@ -640,7 +641,7 @@ class _sbc {
     return await readBytesAsync(this.sl_s, count);
   }
 
-  async init(
+  async _init(
     host = process.env.LG_ADDR || "localhost",
     port = process.env.LG_PORT || 8889,
     show_errors = true,
