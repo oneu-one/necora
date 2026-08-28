@@ -1,8 +1,0 @@
-{
-  "name": "@necora/rgpio",
-  "version": "1.0.0",
-  "main": "rgpio.cjs",
-  "private": true,
-  "type": "commonjs",
-  "license": "MIT"
-}

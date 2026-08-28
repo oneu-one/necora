@@ -1,8 +1,4 @@
 import { settings } from "../index.mjs";
-// const import_gpio_code = [`const _rg = require('@necora/rgpio');`];
-// const gpio_gpio_open_code = [
-//   `const _gpio = await _sbc.gpiochip_open(${settings.data.gpiodev});`,
-// ];
 
 /******************************* */
 /** Connect to the rgpiod daemon */
@@ -27,9 +23,8 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["rgpio_sbc"] = function () {
   Blockly.JavaScript.provideFunction_("import_gpio", [
-    'const _rgpio = require("@necora/rgpio");',
+    `const _rgpio = require("${settings.data.mod_dir}rgpio.cjs");`,
   ]);
-  // const code = `_sbc = await require('@necora/rgpio').sbc("${settings.data.host}", "${settings.data.port}");
   const code = `if (global._sbc === undefined) { //Necora
   global._sbc =await _rgpio.sbc("${settings.data.host}", "${settings.data.port}");
   if (_sbc.connected == false) {

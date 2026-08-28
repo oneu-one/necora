@@ -47,7 +47,7 @@ javascript.javascriptGenerator.forBlock["sfmv17_init"] = function (
     block.getFieldValue("sfmv17"),
   );
   Blockly.JavaScript.provideFunction_("require_sfmv17", [
-    `const {SFMV17} = require('@necora/sfmv17');`,
+    `const {SFMV17} = require('${settings.data.mod_dir}sfmv17.cjs');`,
   ]);
   const code = `${variable_sfmv17} = new SFMV17(_sbc);
 await ${variable_sfmv17}.init(${value_port}, 115200);\n`;
@@ -424,7 +424,7 @@ javascript.javascriptGenerator.forBlock["inertial_init"] = function (
     block.getFieldValue("mpu6050"),
   );
   Blockly.JavaScript.provideFunction_("require_mpu6050", [
-    `const { MPU6050 } = require('@necora/mpu6050');`,
+    `const { MPU6050 } = require('${settings.data.mod_dir}mpu6050.cjs');`,
   ]);
   const code = `${variable_mpu6050} = new MPU6050(_sbc);
   await ${variable_mpu6050}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
@@ -577,7 +577,7 @@ javascript.javascriptGenerator.forBlock["pca9685_start"] = function (
     block.getFieldValue("handle"),
   );
   Blockly.JavaScript.provideFunction_("require_pca9685", [
-    `const { PCA9685 } = require('@necora/pca9685');`,
+    `const { PCA9685 } = require('${settings.data.mod_dir}pca9685.cjs');`,
   ]);
 
   const code = `${variable_handle} = new PCA9685(_sbc);
@@ -737,7 +737,7 @@ javascript.javascriptGenerator.forBlock["oled_init"] = function (
     block.getFieldValue("handle"),
   );
   Blockly.JavaScript.provideFunction_("require_oled", [
-    `const {SSD1306} = require('@necora/ssd1306');`,
+    `const {SSD1306} = require('${settings.data.mod_dir}ssd1306.cjs');`,
   ]);
   let size_x, size_y;
   [size_x, size_y] = dropdown_disp_size.split("x");
@@ -1052,7 +1052,7 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
     `const _PNGJS = require("pngjs").PNG;`,
   ]);
   Blockly.JavaScript.provideFunction_("require_text2png", [
-    `const _text2png = require("@necora/text2png");`,
+    `const _text2png = require("${settings.data.mod_dir}text2png");`,
   ]);
   const oledfont = dropdown_font.split(",");
   const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${
@@ -1104,7 +1104,7 @@ javascript.javascriptGenerator.forBlock["gesture_init"] = function (
     block.getFieldValue("paj7620"),
   );
   Blockly.JavaScript.provideFunction_("require_paj7620", [
-    `const { PAJ7620 } = require('@necora/paj7620');`,
+    `const { PAJ7620 } = require('${settings.data.mod_dir}paj7620.cjs');`,
   ]);
   const code = `${variable_paj7620} = new PAJ7620(_sbc);
 await ${variable_paj7620}.init(${settings.data.i2cdev}, ${dropdown_i2c_addr});\n`;
@@ -1241,7 +1241,7 @@ javascript.javascriptGenerator.forBlock["grideye_init"] = function (
     block.getFieldValue("grid_eye"),
   );
   Blockly.JavaScript.provideFunction_("import_amg8833", [
-    `const {AMG8833} = require('@necora/amg8833');`,
+    `const {AMG8833} = require('${settings.data.mod_dir}amg8833.cjs');`,
   ]);
   const code = `${variable_grid_eye} = new AMG8833(_sbc);
   await ${variable_grid_eye}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
@@ -1741,7 +1741,7 @@ javascript.javascriptGenerator.forBlock["bme280_init"] = function (
     block.getFieldValue("bme280"),
   );
   Blockly.JavaScript.provideFunction_("import_bme280", [
-    `const {BME280} = require('@necora/bme280');`,
+    `const {BME280} = require('${settings.data.mod_dir}bme280.cjs');`,
   ]);
   const code = `${variable_bme280} = new BME280(_sbc);
   await ${variable_bme280}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
@@ -1845,7 +1845,7 @@ javascript.javascriptGenerator.forBlock["bme280_close"] = function (
 //   generator
 // ) {
 //   Blockly.JavaScript.provideFunction_("require_servo", [
-//     `const {SERVO} = require('@necora/servo');`,
+//     `const {SERVO} = require('${settings.data.mod_dir}servo');`,
 //   ]);
 
 //   const code = `const _servo = new SERVO(${settings.data.pwmchip}, ${settings.data.pwmchan});

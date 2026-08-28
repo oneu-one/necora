@@ -1,5 +1,5 @@
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
 module.exports = {
   packagerConfig: {
@@ -8,25 +8,49 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
-      config: {},
+      name: "@electron-forge/maker-squirrel",
+      config: {
+        options: {
+          description: "necora: Block Programming and Runtime Environment",
+          homepage: "https://necora.cc",
+          license: "MIT",
+          name: "necora",
+          productName: "necora",
+          version: "0.0.2",
+          categories: ["Development"],
+          icon: "./icon.png",
+          maintainer: "dd.necora.cc <info@necora.cc>",
+        },
+      },
     },
+    // {
+    //   name: "@electron-forge/maker-zip",
+    //   platforms: ["darwin"],
+    // },
     {
-      name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      name: "@electron-forge/maker-deb",
+      config: {
+        options: {
+          description: "necora: Block Programming and Runtime Environment",
+          homepage: "https://necora.cc",
+          license: "MIT",
+          name: "necora",
+          productName: "necora",
+          version: "0.0.2",
+          categories: ["Development"],
+          icon: "./icon.png",
+          maintainer: "dd.necora.cc <info@necora.cc>",
+        },
+      },
     },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+    // {
+    //   name: '@electron-forge/maker-rpm',
+    //   config: {},
+    // },
   ],
   plugins: [
     {
-      name: '@electron-forge/plugin-auto-unpack-natives',
+      name: "@electron-forge/plugin-auto-unpack-natives",
       config: {},
     },
     // Fuses are used to enable/disable various Electron functionality

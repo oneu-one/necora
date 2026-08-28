@@ -4,8 +4,9 @@ import "./blocks/index.js"; // カスタムブロック定義
 class Settings {
   constructor() {
     this.data = {
-      version: 2,
+      version: 1,
       wsfname: "workspace.xml",
+      mod_dir: "./neco/",
       host: "localhost",
       port: "8889",
       gpiodev: "4",

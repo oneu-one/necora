@@ -1,3 +1,5 @@
+import { settings } from "../index.mjs";
+
 // Color Picker : ビルトインのブロックがウチの環境でどうもうまく働かないので自作
 registerFieldColour();
 Blockly.defineBlocksWithJsonArray([
@@ -201,7 +203,7 @@ javascript.javascriptGenerator.forBlock["voicevox"] = function (
   );
   const checkbox_cache = block.getFieldValue("cache");
   Blockly.JavaScript.provideFunction_("require_voicevox", [
-    `const _voicevox = require('@necora/voicevox');`,
+    `const _voicevox = require('./neco/voicevox.cjs');`,
   ]);
   const cache_value = checkbox_cache === "TRUE" ? "true" : "false";
 
@@ -265,7 +267,7 @@ Blockly.Blocks["face_init"] = {
     this.setNextStatement(true, null);
     this.setStyle("multimedia_blocks");
     this.setTooltip(
-      "Blazeface detector モデルによる顔検出を開始します。最初に実行してください",
+      "Face Detection モデルによる顔検出を開始します。最初に実行してください",
     );
     this.setHelpUrl("");
   },
@@ -278,10 +280,10 @@ javascript.javascriptGenerator.forBlock["face_init"] = function (
     `const _tf = require('@tensorflow/tfjs');`,
   ]);
   Blockly.JavaScript.provideFunction_("import_backend", [
-    `const _backend = require('@tensorflow/tfjs-backend-webgpu');`,
+    `const _backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
   ]);
-  Blockly.JavaScript.provideFunction_("require_blazeface", [
-    `const _blazeface = require('@tensorflow-models/blazeface');`,
+  Blockly.JavaScript.provideFunction_("require_faceDetection", [
+    `const _faceDetection = require('@tensorflow-models/face-detection');`,
   ]);
   var code = `const _videoEl = document.createElement("video");
 _videoEl.setAttribute('autoplay', '');
@@ -300,8 +302,12 @@ document.getElementById('display_area').appendChild(_videoEl);
 const _displaySize = { width: _videoEl.width, height: _videoEl.height };
 const _stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: _displaySize });
 _videoEl.srcObject = _stream;
-await _tf.setBackend('webgpu');
-const _model = await _blazeface.load();
+await _tf.setBackend('${settings.data.tfjs_backend}');
+const _model = _faceDetection.SupportedModels.MediaPipeFaceDetector;
+const _detectorConfig = {
+  runtime: 'tfjs',
+}
+const _detector = await _faceDetection.createDetector(_model, _detectorConfig);
 `;
   return code;
 };
@@ -363,7 +369,7 @@ javascript.javascriptGenerator.forBlock["face_detect"] = function (
     "preditions",
     Blockly.JavaScript.ORDER_ATOMIC,
   );
-  var code = `${value_preditions} = await _model.estimateFaces(_videoEl, false);`;
+  var code = `${value_preditions} = await _detector.estimateFaces(_videoEl);\n`;
   return code;
 };
 Blockly.Blocks["face_location"] = {
@@ -373,10 +379,10 @@ Blockly.Blocks["face_location"] = {
       .appendField("の")
       .appendField(
         new Blockly.FieldDropdown([
-          ["左座標", "topLeft[0]"],
-          ["上座標", "topLeft[1]"],
-          ["右座標", "bottomRight[0]"],
-          ["下座標", "bottomRight[1]"],
+          ["左座標", "box.xMin"],
+          ["上座標", "box.yMin"],
+          ["右座標", "box.xMax"],
+          ["下座標", "box.yMax"],
         ]),
         "member",
       );
@@ -427,19 +433,16 @@ javascript.javascriptGenerator.forBlock["face_drawbox"] = function (
     Blockly.JavaScript.ORDER_NONE,
   );
   var checkbox_with_landmark = block.getFieldValue("with_landmark") === "TRUE";
-  var code = `const _start = ${value_prediction}.topLeft;
-  const _end = ${value_prediction}.bottomRight;
-  const _size = [_end[0] - _start[0], _end[1] - _start[1]];
-  _overlay_ctx.clearRect(0, 0, _displaySize.width, _displaySize.height)
+  var code = `_overlay_ctx.clearRect(0, 0, _displaySize.width, _displaySize.height)
   _overlay_ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-  _overlay_ctx.fillRect(_start[0], _start[1], _size[0], _size[1]);
+  _overlay_ctx.fillRect(${value_prediction}.box.xMin, ${value_prediction}.box.yMin, ${value_prediction}.box.width, ${value_prediction}.box.height);
   if (${checkbox_with_landmark}) {
-    const _landmarks = ${value_prediction}.landmarks;
-    _overlay_ctx.fillStyle = 'blue';
+    const _landmarks = ${value_prediction}.keypoints;
+    _overlay_ctx.fillStyle = 'skyblue';
     for (let _j = 0; _j < _landmarks.length; _j++) {
-        const _x = _landmarks[_j][0];
-        const _y = _landmarks[_j][1];
-        _overlay_ctx.fillRect(_x, _y, 5, 5);
+        const _x = _landmarks[_j].x;
+        const _y = _landmarks[_j].y;
+        _overlay_ctx.fillRect(_x-2, _y-2, 4, 4);
     }
   }
   `;

@@ -1,7 +1,0 @@
-{
-  "name": "@necora/pca9685",
-  "version": "1.0.0",
-  "main": "pca9685.js",
-  "private": true,
-  "license": "MIT"
-}
