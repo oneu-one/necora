@@ -962,6 +962,7 @@ javascript.javascriptGenerator.forBlock["oled_drawpixel"] = function (
   const code = `await ${value_handle}.drawPixel([${value_x},${value_y},${dropdown_color}],${checkbox_sync.toLowerCase()});`;
   return code;
 };
+
 // OLED に日本語フォントを表示 node-canvas, jspng 利用
 Blockly.defineBlocksWithJsonArray([
   {
@@ -1052,7 +1053,7 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
     `const _PNGJS = require("pngjs").PNG;`,
   ]);
   Blockly.JavaScript.provideFunction_("require_text2png", [
-    `const _text2png = require("${settings.data.mod_dir}text2png");`,
+    `const _text2png = require("${settings.data.mod_dir}text2png.cjs");`,
   ]);
   const oledfont = dropdown_font.split(",");
   const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${

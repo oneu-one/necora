@@ -46,19 +46,19 @@ Blockly.Blocks["network_httpserver"] = {
 };
 javascript.javascriptGenerator.forBlock["network_httpserver"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_url = Blockly.JavaScript.valueToCode(
     block,
     "url",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   // var variable_url = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('URL'), Blockly.Variables.NAME_TYPE);
   var statements_do = Blockly.JavaScript.statementToCode(block, "do");
   var value_response = Blockly.JavaScript.valueToCode(
     block,
     "response",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
   Blockly.JavaScript.provideFunction_("require_http", [
     `const _http = require('http');`,
@@ -77,11 +77,8 @@ javascript.javascriptGenerator.forBlock["network_httpserver"] = function (
   return code;
 };
 
-/******************** */
-/** axios HTTP client */
-/******************** */
-// Get URL
-Blockly.Blocks["network_axios_geturl"] = {
+// HTTP Get using fetch
+Blockly.Blocks["network_fetch_geturl"] = {
   init: function () {
     this.appendValueInput("url").setCheck("String").appendField("URL");
     this.appendDummyInput().appendField("の内容");
@@ -90,36 +87,35 @@ Blockly.Blocks["network_axios_geturl"] = {
     this.setOutputShape(Blockly.OUTPUT_SHAPE_ROUND);
     this.setStyle("network_blocks");
     this.setTooltip(
-      "URLにGETリクエストを送信し、レスポンスを取得します。エラーの場合、HTTPステータスコードを返します。"
+      "URLにGETリクエストを送信し、レスポンスを取得します。エラーの場合、HTTPステータスコードを返します。",
     );
     this.setHelpUrl("");
   },
 };
-javascript.javascriptGenerator.forBlock["network_axios_geturl"] = function (
+javascript.javascriptGenerator.forBlock["network_fetch_geturl"] = function (
   block,
-  generator
+  generator,
 ) {
   var value_url = Blockly.JavaScript.valueToCode(
     block,
     "url",
-    Blockly.JavaScript.ORDER_ATOMIC
+    Blockly.JavaScript.ORDER_ATOMIC,
   );
-  var functionName = Blockly.JavaScript.provideFunction_("_getUrl", [
-    `const axios = require('axios');`,
+  var functionName = Blockly.JavaScript.provideFunction_("_fetchUrl", [
     "const " +
       Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
       " = async url => {",
-    "let res, ret;",
-    "try {",
-    `res = await axios.get(url);`,
-    "ret = res.data;",
-    "} catch (error) {",
-    "if (error.response) {",
-    "ret = error.response.status;",
-    "} else {",
-    "ret = 999;",
-    "}",
-    "}",
+    `let ret;
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      ret = await response.text();
+    } else {
+      ret = response.status;
+    }
+  } catch (error) {
+    ret = error.message;
+  }`,
     "return ret;",
     "}",
   ]);

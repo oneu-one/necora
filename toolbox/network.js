@@ -15,9 +15,9 @@ const category_network = [
       },
       {
         kind: "block",
-        type: "network_axios_geturl",
+        type: "network_fetch_geturl",
         blockxml:
-          '<block type="network_axios_geturl"><value name="url"><shadow type="text"><field name="TEXT">http://www.yahoo.co.jp/</field></shadow></value></block>',
+          '<block type="network_fetch_geturl"><value name="url"><shadow type="text"><field name="TEXT">http://example.com/</field></shadow></value></block>',
       },
       {
         kind: "label",
