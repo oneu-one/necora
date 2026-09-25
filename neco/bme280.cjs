@@ -1,8 +1,8 @@
 /*** 温湿度気圧センサ BME280 ***/
 
 class BME280 {
-  constructor(sbc) {
-    this.sbc = sbc;
+  constructor(pi) {
+    this.pi = pi;
     // 宣言だけ、後に使用
     this.i2cHand = null;
     this.cal = null;
@@ -43,15 +43,19 @@ class BME280 {
   }
 
   async init(i2c_bus, i2c_address, i2c_flags = 0) {
-    this.i2cHand = await this.sbc.i2c_open(i2c_bus, i2c_address, i2c_flags);
+    this.i2cHand = await this.pi.i2c_open(i2c_bus, i2c_address, i2c_flags);
 
     let r;
-    r = await this.sbc.i2c_write_byte_data(this.i2cHand, this.REGISTER_CHIPID, 0);
+    r = await this.pi.i2c_write_byte_data(
+      this.i2cHand,
+      this.REGISTER_CHIPID,
+      0,
+    );
     if (r < 0) return r;
 
-    let chipId = await this.sbc.i2c_read_byte_data(
+    let chipId = await this.pi.i2c_read_byte_data(
       this.i2cHand,
-      this.REGISTER_CHIPID
+      this.REGISTER_CHIPID,
     );
     if (
       chipId !== this.CHIP_ID_BME280() &&
@@ -70,18 +74,18 @@ class BME280 {
       }
       // Humidity 16x oversampling
       //
-      let r = await this.sbc.i2c_write_byte_data(
+      let r = await this.pi.i2c_write_byte_data(
         this.i2cHand,
         this.REGISTER_CONTROL_HUM,
-        0b00000101
+        0b00000101,
       );
       if (r < 0) return `Humidity 16x oversampling error: ${r}`;
       // Temperture/pressure 16x oversampling, normal mode
       //
-      r = await this.sbc.i2c_write_byte_data(
+      r = await this.pi.i2c_write_byte_data(
         this.i2cHand,
         this.REGISTER_CONTROL,
-        0b10110111
+        0b10110111,
       );
       if (r < 0) return `Temperture/pressure 16x oversampling error: ${r}`;
 
@@ -96,10 +100,10 @@ class BME280 {
   //
   async reset() {
     const POWER_ON_RESET_CMD = 0xb6;
-    let r = await this.sbc.i2c_write_byte_data(
+    let r = await this.pi.i2c_write_byte_data(
       this.i2cHand,
       this.REGISTER_RESET,
-      POWER_ON_RESET_CMD
+      POWER_ON_RESET_CMD,
     );
     if (r < 0) return `cannot power-on reset: ${r}`;
     else return 0;
@@ -111,7 +115,7 @@ class BME280 {
   //
   async close() {
     if (this.i2cHand >= 0) {
-      await this.sbc.i2c_close(this.i2cHand);
+      await this.pi.i2c_close(this.i2cHand);
       this.i2cHand = null;
     }
   }
@@ -123,10 +127,10 @@ class BME280 {
 
     // Grab temperature, humidity, and pressure in a single read
     //
-    let [bytes, buffer] = await this.sbc.i2c_read_i2c_block_data(
+    let [bytes, buffer] = await this.pi.i2c_read_i2c_block_data(
       this.i2cHand,
       this.REGISTER_PRESSURE_DATA,
-      8
+      8,
     );
     if (!buffer) return `couldn't grab data`;
     // Temperature (temperature first since we need t_fine for pressure and humidity)
@@ -177,8 +181,8 @@ class BME280 {
       ((this.cal.dig_H2 / 65536) *
         (1 +
           (this.cal.dig_H6 / 67108864) *
-          h *
-          (1 + (this.cal.dig_H3 / 67108864) * h)));
+            h *
+            (1 + (this.cal.dig_H3 / 67108864) * h)));
     h = h * (1 - (this.cal.dig_H1 * h) / 524288);
 
     let humidity = h > 100 ? 100 : h < 0 ? 0 : h;
@@ -197,22 +201,40 @@ class BME280 {
   }
 
   async loadCalibration(callback) {
-    let [byts, buffer] = await this.sbc.i2c_read_i2c_block_data(
+    let [byts, buffer] = await this.pi.i2c_read_i2c_block_data(
       this.i2cHand,
       this.REGISTER_DIG_T1,
-      24
+      24,
     );
     if (buffer) {
-      let h1 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H1);
-      let h2 = await this.sbc.i2c_read_word_data(this.i2cHand, this.REGISTER_DIG_H2);
-      let h3 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H3);
-      let h4 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H4);
-      let h5 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H5);
-      let h5_1 = await this.sbc.i2c_read_byte_data(
+      let h1 = await this.pi.i2c_read_byte_data(
         this.i2cHand,
-        this.REGISTER_DIG_H5 + 1
+        this.REGISTER_DIG_H1,
       );
-      let h6 = await this.sbc.i2c_read_byte_data(this.i2cHand, this.REGISTER_DIG_H6);
+      let h2 = await this.pi.i2c_read_word_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H2,
+      );
+      let h3 = await this.pi.i2c_read_byte_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H3,
+      );
+      let h4 = await this.pi.i2c_read_byte_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H4,
+      );
+      let h5 = await this.pi.i2c_read_byte_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H5,
+      );
+      let h5_1 = await this.pi.i2c_read_byte_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H5 + 1,
+      );
+      let h6 = await this.pi.i2c_read_byte_data(
+        this.i2cHand,
+        this.REGISTER_DIG_H6,
+      );
 
       this.cal = {
         dig_T1: this.uint16(buffer[1], buffer[0]),

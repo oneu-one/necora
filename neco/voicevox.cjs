@@ -33,7 +33,7 @@ module.exports = async function (text, speaker, cache = true) {
       );
     } catch (error) {
       console.error("VoiceVoxサーバーに接続できませんでした。");
-      _necora.fukidashi("VoiceVox が起動してないかも・・・", 10);
+      necora.fukidashi("VoiceVox が起動してないかも・・・", 10);
       throw error;
     }
 

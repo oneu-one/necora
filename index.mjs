@@ -4,12 +4,13 @@ import "./blocks/index.js"; // カスタムブロック定義
 class Settings {
   constructor() {
     this.data = {
-      version: 1,
-      wsfname: "workspace.xml",
+      version: 2,
+      wsfname: "workspace.json",
       mod_dir: "./neco/",
+      gpiolib: "pigpio",
       host: "localhost",
-      port: "8889",
-      gpiodev: "4",
+      // port: "8888",
+      // gpiodev: "0",
       min_pulse: "130",
       max_pulse: "540",
       i2cdev: "1",
@@ -38,6 +39,11 @@ class Settings {
   }
 }
 var settings = new Settings();
+
+// 予約語登録：コード生成でユーザ定義変数名との衝突を防ぐ ※コンマの後にスペースを入れない
+Blockly.JavaScript.addReservedWords(
+  "necora,sleep,pi,pigpio,rgpio,sbc,fingerprint,ctx,imgdata,grideye,PNGJS,text2png,grideye_canvas,grideye_ctx,grideye_imgData,color_range,tf,backend,mobilenet,knnClassifier,net,classifier,voicevox,execFileAsync,videoEl,displaySize,stream,model,detectorConfig,faceDetection,detector,overlay,overlay_ctx,landmarks",
+);
 
 //============ ユーティリティメソッド ===============
 
@@ -98,7 +104,7 @@ const newWorkspace = () => {
     (okey) => {
       if (okey) {
         workspace.clear();
-        settings.data.wsfname = "workspace.xml";
+        settings.data.wsfname = "workspace.json";
       }
     },
   );
@@ -209,17 +215,21 @@ function showSettings() {
   const btn_cancel = document.getElementById("settingsDlgCancel");
 
   const fld_host = document.getElementById("host");
-  const fld_port = document.getElementById("port");
-  const fld_gpiochip = document.getElementById("gpiodev");
+  // const fld_port = document.getElementById("port");
+  // const fld_gpiochip = document.getElementById("gpiodev");
   const fld_min_pulse = document.getElementById("min_pulse");
   const fld_max_pulse = document.getElementById("max_pulse");
   const fld_i2cdev = document.getElementById("i2cdev");
-  const fld_tfjs_backend = document.getElementById("webgpu");
   const fld_mascot = document.getElementById("mascot");
 
   fld_host.value = settings.data.host;
-  fld_port.value = settings.data.port;
-  fld_gpiochip.value = settings.data.gpiodev;
+  // fld_port.value = settings.data.port;
+  // fld_gpiochip.value = settings.data.gpiodev;
+  if (settings.data.gpiolib === "pigpio") {
+    document.getElementById("pigpio").checked = true;
+  } else {
+    document.getElementById("rgpio").checked = true;
+  }
   fld_min_pulse.value = settings.data.min_pulse;
   fld_max_pulse.value = settings.data.max_pulse;
   fld_i2cdev.value = settings.data.i2cdev;
@@ -237,8 +247,12 @@ function showSettings() {
       // if (pybtn.checked) settings.data.lang = "py";
       // else settings.data.lang = "js";
       if (fld_host.value) settings.data.host = fld_host.value;
-      if (fld_port.value) settings.data.port = fld_port.value;
-      if (fld_gpiochip.value) settings.data.gpiodev = fld_gpiochip.value;
+      // if (fld_port.value) settings.data.port = fld_port.value;
+      // if (fld_gpiochip.value) settings.data.gpiodev = fld_gpiochip.value;
+      if (document.getElementById("pigpio").checked)
+        settings.data.gpiolib = "pigpio";
+      if (document.getElementById("rgpio").checked)
+        settings.data.gpiolib = "rgpio";
       if (fld_min_pulse.value) settings.data.min_pulse = fld_min_pulse.value;
       if (fld_max_pulse.value) settings.data.max_pulse = fld_max_pulse.value;
       if (fld_i2cdev.value) settings.data.i2cdev = fld_i2cdev.value;
@@ -260,18 +274,25 @@ function showSettings() {
 /******** ワークスペース入出力 ********/
 // ワークスペースをローカルストレージに保存・読込
 function wsToLocal() {
-  let xml = Blockly.Xml.workspaceToDom(workspace);
-  let xml_text = Blockly.utils.xml.domToText(xml);
-  localStorage.setItem("workspace.xml", xml_text);
+  const state = Blockly.serialization.workspaces.save(workspace);
+  localStorage.setItem("workspace.state", JSON.stringify(state));
+  // let xml = Blockly.Xml.workspaceToDom(workspace);
+  // let xml_text = Blockly.utils.xml.domToText(xml);
+  // localStorage.setItem("workspace.xml", xml_text);
 }
 function wsFromLocal() {
-  let xml_text = localStorage.getItem("workspace.xml");
-  if (xml_text !== null) {
-    if (xml_text.length != 0) {
-      let xml = Blockly.utils.xml.textToDom(xml_text);
-      Blockly.Xml.domToWorkspace(xml, workspace);
-    }
+  const state_text = localStorage.getItem("workspace.state");
+  if (state_text !== null) {
+    const state = JSON.parse(state_text);
+    Blockly.serialization.workspaces.load(state, workspace);
   }
+  // let xml_text = localStorage.getItem("workspace.xml");
+  // if (xml_text !== null) {
+  //   if (xml_text.length != 0) {
+  //     let xml = Blockly.utils.xml.textToDom(xml_text);
+  //     Blockly.Xml.domToWorkspace(xml, workspace);
+  //   }
+  // }
 }
 // ワークスペースをファイルからロード
 async function loadWorkspaceFromFile() {
@@ -281,19 +302,26 @@ async function loadWorkspaceFromFile() {
       const [handle] = await window.showOpenFilePicker({
         types: [
           {
-            description: "necora Workspace XML Files",
+            description: "necora Workspace JSON/XML Files",
             accept: {
+              "application/json": [".json"],
               "text/xml": [".xml"],
             },
           },
         ],
       });
       const file = await handle.getFile();
-      const xml_text = await file.text();
-      Blockly.Xml.domToWorkspace(
-        Blockly.utils.xml.textToDom(xml_text),
-        workspace,
-      );
+      if (file.type === "application/json") {
+        const state_text = await file.text();
+        const state = JSON.parse(state_text);
+        Blockly.serialization.workspaces.load(state, workspace);
+      } else if (file.type === "text/xml") {
+        const xml_text = await file.text();
+        if (xml_text.length != 0) {
+          let xml = Blockly.utils.xml.textToDom(xml_text);
+          Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+      }
       settings.data.wsfname = file.name;
     } else {
       throw new Error("Chrome (Chromium) で実行してください。");
@@ -308,22 +336,28 @@ async function saveWorkspaceAs() {
   try {
     if ("showSaveFilePicker" in window) {
       // showSaveFilePicker は使える？
-      const xml_text = Blockly.utils.xml.domToText(
-        Blockly.Xml.workspaceToDom(workspace),
-      );
+      const state = Blockly.serialization.workspaces.save(workspace);
+      console.log(typeof state);
+      // const xml_text = Blockly.utils.xml.domToText(
+      //   Blockly.Xml.workspaceToDom(workspace),
+      // );
       const handle = await window.showSaveFilePicker({
         suggestedName: settings.data.wsfname,
         types: [
           {
-            description: "necora Workspace XML Files",
+            description: "necora Workspace JSON Files",
             accept: {
-              "text/xml": [".xml"],
+              "application/json": [".json"],
             },
+            // description: "necora Workspace XML Files",
+            // accept: {
+            //   "text/xml": [".xml"],
+            // },
           },
         ],
       });
       const writable = await handle.createWritable();
-      await writable.write(xml_text);
+      await writable.write(JSON.stringify(state));
       await writable.close();
       settings.data.wsfname = handle.name;
       console.log("File saved successfully.");
@@ -526,10 +560,10 @@ function fukidashi(text, sec) {
 // const sleep = (sec) => new Promise((r) => setTimeout(r, sec * 1000));
 
 // GPIOモジュールリセット
-function rgreset() {
-  if (global._sbc !== undefined) {
-    global._sbc.stop();
-    global._sbc = undefined;
+function pigreset() {
+  if (global._pi !== undefined) {
+    global._pi.stop();
+    global._pi = undefined;
   }
 }
 
@@ -545,7 +579,7 @@ export {
   fukidashi,
   playSound,
   playSoundFile,
-  rgreset,
+  pigreset,
   settings,
   fdRecentBox,
 };
@@ -731,3 +765,6 @@ var onresize = function (e) {
 window.addEventListener("resize", onresize, false);
 onresize();
 Blockly.svgResize(workspace);
+
+// // カンマ区切りで、ユーザー変数と衝突させたくない名前（予約語）を登録します
+// Blockly.JavaScript.addReservedWords("mod,myModuleInstance,myModSecret");

@@ -1,8 +1,8 @@
 /*** 手勢（ジェスチャー）認識センサ PAJ7620 ***/
 
 class PAJ7620 {
-  constructor(sbc) {
-    this.sbc = sbc;
+  constructor(pi) {
+    this.pi = pi;
     this.i2cHand = null;
     this.GES_REACTION_TIME = 0.1; // default:0.5 // You can adjust the reaction time according to the actual circumstance.
     this.GES_ENTRY_TIME = 0.05; // default:0.8 // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s).
@@ -310,12 +310,12 @@ class PAJ7620 {
     ];
   }
   async init(i2c_bus, i2c_addr, i2c_flags = 0) {
-    this.i2c_hand = await this.sbc.i2c_open(i2c_bus, i2c_addr, i2c_flags);
+    this.i2c_hand = await this.pi.i2c_open(i2c_bus, i2c_addr, i2c_flags);
     if (this.i2c_hand < 0) {
       console.log(`PAJ7620 i2c_open failed`);
       return this.i2c_hand;
     }
-    await this.sbc.lgu_sleep(0.001);
+    await this.pi.sleep(0.001);
     await this.paj7620SelectBank(this.BANK0);
     await this.paj7620SelectBank(this.BANK0);
 
@@ -330,7 +330,7 @@ class PAJ7620 {
     for (let i = 0; i < this.initRegisterArray.length; i += 1)
       await this.paj7620WriteReg(
         this.initRegisterArray[i][0],
-        this.initRegisterArray[i][1]
+        this.initRegisterArray[i][1],
       );
 
     await this.paj7620SelectBank(this.BANK0);
@@ -339,7 +339,7 @@ class PAJ7620 {
   }
   // Write a byte to a register on the Gesture sensor
   async paj7620WriteReg(addr, cmd) {
-    await this.sbc.i2c_write_word_data(this.i2c_hand, addr, cmd);
+    await this.pi.i2c_write_word_data(this.i2c_hand, addr, cmd);
   }
 
   //Select a register bank on the Gesture Sensor
@@ -347,13 +347,17 @@ class PAJ7620 {
     if (bank == this.BANK0)
       await this.paj7620WriteReg(
         this.PAJ7620_REGITER_BANK_SEL,
-        this.PAJ7620_BANK0
+        this.PAJ7620_BANK0,
       );
   }
 
   //Read a block of bytes of length "qty" starting at address "addr" from the Gesture sensor
   async paj7620ReadReg(addr, qty) {
-    let [bytes, data] = await this.sbc.i2c_read_i2c_block_data(this.i2c_hand, addr, qty);
+    let [bytes, data] = await this.pi.i2c_read_i2c_block_data(
+      this.i2c_hand,
+      addr,
+      qty,
+    );
     return data;
   }
 
@@ -361,7 +365,7 @@ class PAJ7620 {
     let data = (await this.paj7620ReadReg(0x43, 1))[0];
     if (data == this.GES_RIGHT_FLAG) {
       // await sleep(GES_ENTRY_TIME);
-      await this.sbc.lgu_sleep(this.GES_ENTRY_TIME);
+      await this.pi.sleep(this.GES_ENTRY_TIME);
       data = (await this.paj7620ReadReg(0x43, 1))[0];
       if (data == this.GES_FORWARD_FLAG) {
         return 1;
@@ -370,7 +374,7 @@ class PAJ7620 {
       } else return 3;
     } else if (data == this.GES_LEFT_FLAG) {
       // await sleep(GES_ENTRY_TIME);
-      await this.sbc.lgu_sleep(this.GES_ENTRY_TIME);
+      await this.pi.sleep(this.GES_ENTRY_TIME);
       data = (await this.paj7620ReadReg(0x43, 1))[0];
       if (data == this.GES_FORWARD_FLAG) {
         return 1;
@@ -379,7 +383,7 @@ class PAJ7620 {
       } else return 4;
     } else if (data == this.GES_UP_FLAG) {
       // await sleep(GES_ENTRY_TIME);
-      await this.sbc.lgu_sleep(this.GES_ENTRY_TIME);
+      await this.pi.sleep(this.GES_ENTRY_TIME);
       data = (await this.paj7620ReadReg(0x43, 1))[0];
       if (data == this.GES_FORWARD_FLAG) {
         return 1;
@@ -388,7 +392,7 @@ class PAJ7620 {
       } else return 5;
     } else if (data == this.GES_DOWN_FLAG) {
       // await sleep(GES_ENTRY_TIME);
-      await this.sbc.lgu_sleep(this.GES_ENTRY_TIME);
+      await this.pi.sleep(this.GES_ENTRY_TIME);
       data = (await this.paj7620ReadReg(0x43, 1))[0];
       if (data == this.GES_FORWARD_FLAG) {
         return 1;
@@ -410,43 +414,13 @@ class PAJ7620 {
 
   async stop() {
     if (this.i2c_hand >= 0) {
-      await this.sbc.i2c_close(this.i2c_hand);
+      await this.pi.i2c_close(this.i2c_hand);
       this.i2c_hand = -1;
     }
   }
 }
 
 module.exports = { PAJ7620 };
-
-//Enable debug message
-// const debug = 1;
-
-// const err_msg =
-//   "PAJ7620 is already opened. Please close old connection to use new one.";
-// let rg = -1;
-// // let sbc = -1;
-// let i2c_hand = -1;
-
-//Initialize the sensors
-// exports.init = async (_rg, i2c_bus, i2c_addr) => {
-// if (wael !== null) {
-//     wael('beforeunload', async () => {
-//         await exports.stop();
-//     });
-// }
-// rg = require(`rgpio`);//${apptool.gpio_lib}
-// if (sbc >= 0) { throw new Error(err_msg); return; }
-// sbc = await this.sbc._rgpiod_start('', '');
-//   rg = _rg;
-//   if (i2c_hand >= 0) {
-//     throw new Error(err_msg);
-//     return;
-//   }
-//   i2c_hand = await this.sbc.i2c_open(i2c_bus, i2c_addr, 0);
-//   if (debug) console.log("i2c_hand=" + i2c_hand);
-
-//   // await sleep(.001);
-// };
 
 //Return a vlaue from the gestire sensor which can be used in a program
 // 	0:nothing

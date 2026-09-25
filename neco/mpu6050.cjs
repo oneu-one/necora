@@ -1,8 +1,8 @@
 /*** 6軸ジャイロセンサ MPU6050 ***/
 
 class MPU6050 {
-  constructor(sbc) {
-    this.sbc = sbc;
+  constructor(pi) {
+    this.pi = pi;
     this.i2c_hand = null;
     this.GRAVITY_MS2 = 9.80665;
 
@@ -56,28 +56,28 @@ class MPU6050 {
   }
 
   async init(i2c_bus, i2c_address, i2c_flags = 0) {
-    let r = await this.sbc.i2c_open(i2c_bus, i2c_address, i2c_flags);
+    let r = await this.pi.i2c_open(i2c_bus, i2c_address, i2c_flags);
     if (r < 0) throw new Error(`Failed to open I2C device: ${r}\n`);
     else this.i2c_hand = r;
     // Wake up the MPU-6050 since it starts in sleep mode
-    this.sbc.lgu_sleep(0.1);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, 0x00);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, 0x00);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.MPU_CONFIG, 0x00);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.PWR_MGMT_1, 0x00);
+    this.pi.lgu_sleep(0.1);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, 0x00);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, 0x00);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.MPU_CONFIG, 0x00);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.PWR_MGMT_1, 0x00);
     return r;
   }
 
   async stop() {
     if (this.i2c_hand !== null) {
-      await this.sbc.i2c_close(this.i2c_hand);
+      await this.pi.i2c_close(this.i2c_hand);
       this.i2c_hand = null;
     }
   }
 
   async read_word_sensor(reg) {
-    let h = await this.sbc.i2c_read_byte_data(this.i2c_hand, reg);
-    let l = await this.sbc.i2c_read_byte_data(this.i2c_hand, reg + 1);
+    let h = await this.pi.i2c_read_byte_data(this.i2c_hand, reg);
+    let l = await this.pi.i2c_read_byte_data(this.i2c_hand, reg + 1);
     let value = (h << 8) + l;
     if (value >= 0x8000) value -= 0x10000;
     return value;
@@ -91,14 +91,18 @@ class MPU6050 {
   }
 
   async set_accel_range(accel_range) {
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, 0x00);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, accel_range);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, 0x00);
+    await this.pi.i2c_write_byte_data(
+      this.i2c_hand,
+      this.ACCEL_CONFIG,
+      accel_range,
+    );
   }
 
   async read_accel_range(raw = false) {
-    let raw_data = await this.sbc.i2c_read_byte_data(
+    let raw_data = await this.pi.i2c_read_byte_data(
       this.i2c_hand,
-      this.ACCEL_CONFIG
+      this.ACCEL_CONFIG,
     );
     if (raw) return raw_data;
     // let accel_range = (raw_data & 0x18);
@@ -159,25 +163,32 @@ class MPU6050 {
   }
 
   async set_gyro_range(gyro_range) {
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, 0x00);
-    await this.sbc.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, gyro_range);
+    await this.pi.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, 0x00);
+    await this.pi.i2c_write_byte_data(
+      this.i2c_hand,
+      this.GYRO_CONFIG,
+      gyro_range,
+    );
   }
 
   async set_filter_range(filter_range = this.FILTER_BW_256) {
-    let current_config = await this.sbc.i2c_read_byte_data(
-      this.i2c_hand,
-      this.MPU_CONFIG
-    );
-    let new_config = (current_config & 0b00111000) | filter_range;
-    return await this.sbc.i2c_write_byte_data(
+    let current_config = await this.pi.i2c_read_byte_data(
       this.i2c_hand,
       this.MPU_CONFIG,
-      new_config
+    );
+    let new_config = (current_config & 0b00111000) | filter_range;
+    return await this.pi.i2c_write_byte_data(
+      this.i2c_hand,
+      this.MPU_CONFIG,
+      new_config,
     );
   }
 
   async read_gyro_range(raw = false) {
-    let raw_data = await this.sbc.i2c_read_byte_data(this.i2c_hand, this.GYRO_CONFIG);
+    let raw_data = await this.pi.i2c_read_byte_data(
+      this.i2c_hand,
+      this.GYRO_CONFIG,
+    );
     if (raw) return raw_data;
     else {
       switch (raw_data) {

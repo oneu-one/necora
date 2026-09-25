@@ -1,8 +1,8 @@
 /*** SSD1306 OLED Display Driver ***/
 
 class SSD1306 {
-  constructor(sbc, opts) {
-    this.sbc = sbc;
+  constructor(pi, opts) {
+    this.pi = pi;
     this.HEIGHT = opts.height || 64;
     this.WIDTH = opts.width || 128;
     this.ADDRESS = opts.address || 0x3c;
@@ -123,7 +123,7 @@ class SSD1306 {
           this.SET_VERTICAL_SCROLL_AREA,
           0x00,
           this.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL,
-          this.HEIGHT
+          this.HEIGHT,
         );
         break;
       // TODO: left diag and right diag not working yet
@@ -132,7 +132,7 @@ class SSD1306 {
           this.SET_VERTICAL_SCROLL_AREA,
           0x00,
           this.VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL,
-          this.HEIGHT
+          this.HEIGHT,
         );
         break;
     }
@@ -147,7 +147,7 @@ class SSD1306 {
       // TODO: these need to change when diagonal
       0x00,
       0xff,
-      this.ACTIVATE_SCROLL
+      this.ACTIVATE_SCROLL,
     );
 
     for (let i = 0; i < cmdSeq.length; i++) {
@@ -182,7 +182,7 @@ class SSD1306 {
 
     // write buffer data
     const bufferToSend = Buffer.concat([Buffer.from([0x40]), this.buffer]);
-    await this.sbc.i2c_write_device(this.i2c_hand, bufferToSend);
+    await this.pi.i2c_write_device(this.i2c_hand, bufferToSend);
   };
 
   /* ##################################################################################################
@@ -472,7 +472,7 @@ class SSD1306 {
 
   // Initialize the display
   initialize = async () => {
-    let r = await this.sbc.i2c_open(this.BUS, this.ADDRESS, 0);
+    let r = await this.pi.i2c_open(this.BUS, this.ADDRESS, 0);
     if (r < 0) {
       console.log(`AMG8833 i2c_open failed`);
       return r;
@@ -528,12 +528,12 @@ class SSD1306 {
     const bufferForSend = Buffer.from([control, val]);
 
     // send control and actual val
-    await this.sbc.i2c_write_device(this.i2c_hand, bufferForSend);
+    await this.pi.i2c_write_device(this.i2c_hand, bufferForSend);
   };
 
   // read a byte from the oled
   _readI2C = async () => {
-    let data = await this.sbc.i2c_read_byte(this.i2c_hand);
+    let data = await this.pi.i2c_read_byte(this.i2c_hand);
     return data > 0 ? data : 0;
   };
 

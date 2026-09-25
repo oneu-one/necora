@@ -162,10 +162,10 @@ javascript.javascriptGenerator.forBlock["sleep"] = function (block, generator) {
   );
   Blockly.JavaScript.provideFunction_(
     "import_sleep",
-    'const { _sleep } = require("./neco/sleep.cjs");',
+    'const { sleep } = require("./neco/sleep.cjs");',
   );
   // var code = `await ${functionName}(${value_sec});\n`;
-  var code = `await _sleep(${value_sec});\n`;
+  var code = `await sleep(${value_sec});\n`;
   return code;
 };
 
@@ -238,10 +238,9 @@ javascript.javascriptGenerator.forBlock["canvas_say"] = function (
     Blockly.JavaScript.ORDER_ATOMIC,
   );
   var value_sec = block.getFieldValue("sec");
-  var code = [
-    `_necora.fukidashi(String(${value_say}), ${value_sec});`,
-    "",
-  ].join("\n");
+  var code = [`necora.fukidashi(String(${value_say}), ${value_sec});`, ""].join(
+    "\n",
+  );
   return code;
 };
 
@@ -296,7 +295,7 @@ javascript.javascriptGenerator.forBlock["prompt"] = function (
     block.getFieldValue("answer"),
   );
   const statement_do = generator.statementToCode(block, "do");
-  const code = `_necora.fukidashi(${value_ask}, 0);
+  const code = `necora.fukidashi(${value_ask}, 0);
   _inputForm = document.getElementById('inputForm');
   _inputBox = document.getElementById('inputBox');
   _inputForm.style.display = 'inline-block';
@@ -306,7 +305,7 @@ javascript.javascriptGenerator.forBlock["prompt"] = function (
       ${variable_answer} = _inputBox.value;
       _inputForm.style.display = "none";
       _inputBox.value = '';
-      document.getElementById('canvas').getContext('2d').clearRect(_necora.fdRecentBox.x,_necora.fdRecentBox.y,_necora.fdRecentBox.w,_necora.fdRecentBox.h);
+      document.getElementById('canvas').getContext('2d').clearRect(necora.fdRecentBox.x,necora.fdRecentBox.y,necora.fdRecentBox.w,necora.fdRecentBox.h);
       ${statement_do}
       console.log('Removing listener...');
       _inputForm.removeEventListener('submit', _inputFunc );

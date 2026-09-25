@@ -10,34 +10,23 @@ const category_gpio = [
     contents: [
       {
         kind: "label",
-        text: "rgpio",
+        text: "必須",
       },
       {
         kind: "block",
-        type: "rgpio_sbc",
+        type: "pigpio_pi",
       },
       {
         kind: "block",
-        type: "sbc_stop",
+        type: "stop",
       },
       {
         kind: "label",
-        text: "GPIOChip",
+        text: "基礎",
       },
       {
         kind: "block",
-        type: "gpiochip_open",
-      },
-      // {
-      //   kind: "block",
-      //   type: "gpiochip_close",
-      // },
-      {
-        kind: "block",
-        type: "gpio_claim_input",
-        fields: {
-          lflag: "PULL_NONE",
-        },
+        type: "set_mode",
         inputs: {
           gpio: {
             shadow: {
@@ -51,21 +40,7 @@ const category_gpio = [
       },
       {
         kind: "block",
-        type: "gpio_claim_output",
-        inputs: {
-          gpio: {
-            shadow: {
-              type: "math_number",
-              fields: {
-                NUM: "16",
-              },
-            },
-          },
-        },
-      },
-      {
-        kind: "block",
-        type: "gpio_read",
+        type: "read",
         inputs: {
           gpio: {
             shadow: {
@@ -79,7 +54,7 @@ const category_gpio = [
       },
       {
         kind: "block",
-        type: "gpio_write",
+        type: "write",
         inputs: {
           gpio: {
             shadow: {
@@ -95,8 +70,12 @@ const category_gpio = [
         },
       },
       {
+        kind: "label",
+        text: "PWM / サーボ",
+      },
+      {
         kind: "block",
-        type: "tx_pwm",
+        type: "pwm_freq",
         inputs: {
           gpio: {
             shadow: {
@@ -114,11 +93,47 @@ const category_gpio = [
               },
             },
           },
+        },
+      },
+      {
+        kind: "block",
+        type: "pwm_duty",
+        inputs: {
+          gpio: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "16",
+              },
+            },
+          },
           duty: {
             shadow: {
               type: "math_number",
               fields: {
                 NUM: "50",
+              },
+            },
+          },
+        },
+      },
+      {
+        kind: "block",
+        type: "servo",
+        inputs: {
+          gpio: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "16",
+              },
+            },
+          },
+          pulsewidth: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "1500",
               },
             },
           },
@@ -207,63 +222,63 @@ const category_gpio = [
         },
       },
       {
-        "kind": "label",
-        "text": "Serial",
+        kind: "label",
+        text: "Serial",
         "web-line": "4.0",
-        "web-line-width": "200"
+        "web-line-width": "200",
       },
       {
-        "kind": "block",
-        "type": "serial_open",
-        "fields": {
-          "baud": "9600"
+        kind: "block",
+        type: "serial_open",
+        fields: {
+          baud: "9600",
         },
-        "inputs": {
-          "port": {
-            "shadow": {
-              "type": "text",
-              "fields": {
-                "TEXT": "/dev/ttyS0"
-              }
-            }
-          }
-        }
+        inputs: {
+          port: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "/dev/ttyS0",
+              },
+            },
+          },
+        },
       },
       {
-        "kind": "block",
-        "type": "serial_close",
+        kind: "block",
+        type: "serial_close",
       },
       {
-        "kind": "block",
-        "type": "serial_data_available",
+        kind: "block",
+        type: "serial_data_available",
       },
       {
-        "kind": "block",
-        "type": "serial_read",
-        "inputs": {
-          "count": {
-            "shadow": {
-              "type": "math_number",
-              "fields": {
-                "NUM": "0"
-              }
-            }
-          }
-        }
+        kind: "block",
+        type: "serial_read",
+        inputs: {
+          count: {
+            shadow: {
+              type: "math_number",
+              fields: {
+                NUM: "0",
+              },
+            },
+          },
+        },
       },
       {
-        "kind": "block",
-        "type": "serial_write",
-        "inputs": {
-          "data": {
-            "shadow": {
-              "type": "text",
-              "fields": {
-                "TEXT": "hello"
-              }
-            }
-          }
-        }
+        kind: "block",
+        type: "serial_write",
+        inputs: {
+          data: {
+            shadow: {
+              type: "text",
+              fields: {
+                TEXT: "hello",
+              },
+            },
+          },
+        },
       },
 
       {

@@ -24,7 +24,7 @@ javascript.javascriptGenerator.forBlock["colour_picker"] = function (
   generator,
 ) {
   const code = generator.quote_(block.getFieldValue("COLOUR"));
-  return [code, Blockly.JavaScript.ORDER_ATOMIC];
+  return [code, javascript.Order.ATOMIC];
 };
 
 Blockly.defineBlocksWithJsonArray([
@@ -115,7 +115,7 @@ javascript.javascriptGenerator.forBlock["coupycolor_picker"] = function (
   generator,
 ) {
   const code = generator.quote_(block.getFieldValue("COLOUR"));
-  return [code, Blockly.JavaScript.ORDER_ATOMIC];
+  return [code, javascript.Order.ATOMIC];
 };
 
 /************ */
@@ -203,12 +203,12 @@ javascript.javascriptGenerator.forBlock["voicevox"] = function (
   );
   const checkbox_cache = block.getFieldValue("cache");
   Blockly.JavaScript.provideFunction_("require_voicevox", [
-    `const _voicevox = require('./neco/voicevox.cjs');`,
+    `const voicevox = require('./neco/voicevox.cjs');`,
   ]);
   const cache_value = checkbox_cache === "TRUE" ? "true" : "false";
 
-  const code = `const fpath = await _voicevox(${value_text}, ${dropdown_speacker}, ${cache_value});
-await _necora.playSoundFile(fpath);
+  const code = `const fpath = await voicevox(${value_text}, ${dropdown_speacker}, ${cache_value});
+await necora.playSoundFile(fpath);
 `;
   return code;
 };
@@ -277,37 +277,37 @@ javascript.javascriptGenerator.forBlock["face_init"] = function (
   generator,
 ) {
   Blockly.JavaScript.provideFunction_("require_tfjs", [
-    `const _tf = require('@tensorflow/tfjs');`,
+    `const tf = require('@tensorflow/tfjs');`,
   ]);
   Blockly.JavaScript.provideFunction_("import_backend", [
-    `const _backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
+    `const backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
   ]);
   Blockly.JavaScript.provideFunction_("require_faceDetection", [
-    `const _faceDetection = require('@tensorflow-models/face-detection');`,
+    `const faceDetection = require('@tensorflow-models/face-detection');`,
   ]);
-  var code = `const _videoEl = document.createElement("video");
-_videoEl.setAttribute('autoplay', '');
-_videoEl.setAttribute('muted', '');
-_videoEl.style.visibility = 'hidden';
-_videoEl.width = 160;
-_videoEl.height = 120;
-_videoEl.style.width = '160px';
-_videoEl.style.height = '120px';
-_videoEl.style.position = 'absolute';
-_videoEl.style.right = '12px';
-_videoEl.style.bottom = '12px';
-_videoEl.style.border = '4px solid white';
-_videoEl.style.borderRadius = '4px';
-document.getElementById('display_area').appendChild(_videoEl);
-const _displaySize = { width: _videoEl.width, height: _videoEl.height };
-const _stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: _displaySize });
-_videoEl.srcObject = _stream;
-await _tf.setBackend('${settings.data.tfjs_backend}');
-const _model = _faceDetection.SupportedModels.MediaPipeFaceDetector;
-const _detectorConfig = {
+  var code = `const videoEl = document.createElement("video");
+videoEl.setAttribute('autoplay', '');
+videoEl.setAttribute('muted', '');
+videoEl.style.visibility = 'hidden';
+videoEl.width = 160;
+videoEl.height = 120;
+videoEl.style.width = '160px';
+videoEl.style.height = '120px';
+videoEl.style.position = 'absolute';
+videoEl.style.right = '12px';
+videoEl.style.bottom = '12px';
+videoEl.style.border = '4px solid white';
+videoEl.style.borderRadius = '4px';
+document.getElementById('display_area').appendChild(videoEl);
+const displaySize = { width: videoEl.width, height: videoEl.height };
+const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: displaySize });
+videoEl.srcObject = stream;
+await tf.setBackend('${settings.data.tfjs_backend}');
+const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
+const detectorConfig = {
   runtime: 'tfjs',
 }
-const _detector = await _faceDetection.createDetector(_model, _detectorConfig);
+const detector = await faceDetection.createDetector(model, detectorConfig);
 `;
   return code;
 };
@@ -328,19 +328,19 @@ javascript.javascriptGenerator.forBlock["face_display"] = function (
   block,
   generator,
 ) {
-  var code = `_videoEl.style.visibility = 'visible';
-const _overlay = document.createElement('canvas');
-_overlay.setAttribute('width', _videoEl.width);
-_overlay.setAttribute('height', _videoEl.height);
-_overlay.style.width = '160px';
-_overlay.style.height = '120px';
-_overlay.style.position = 'absolute';
-_overlay.style.right = '12px';
-_overlay.style.bottom = '12px';
-_overlay.style.border = '4px solid white';
-_overlay.style.borderRadius = '4px';
-document.getElementById('display_area').appendChild(_overlay);
-const _overlay_ctx = _overlay.getContext('2d');
+  var code = `videoEl.style.visibility = 'visible';
+const overlay = document.createElement('canvas');
+overlay.setAttribute('width', videoEl.width);
+overlay.setAttribute('height', videoEl.height);
+overlay.style.width = '160px';
+overlay.style.height = '120px';
+overlay.style.position = 'absolute';
+overlay.style.right = '12px';
+overlay.style.bottom = '12px';
+overlay.style.border = '4px solid white';
+overlay.style.borderRadius = '4px';
+document.getElementById('display_area').appendChild(overlay);
+const overlay_ctx = overlay.getContext('2d');
 `;
   return code;
 };
@@ -367,9 +367,9 @@ javascript.javascriptGenerator.forBlock["face_detect"] = function (
   var value_preditions = Blockly.JavaScript.valueToCode(
     block,
     "preditions",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
-  var code = `${value_preditions} = await _detector.estimateFaces(_videoEl);\n`;
+  var code = `${value_preditions} = await detector.estimateFaces(videoEl);\n`;
   return code;
 };
 Blockly.Blocks["face_location"] = {
@@ -400,11 +400,11 @@ javascript.javascriptGenerator.forBlock["face_location"] = function (
   var value_prediction = Blockly.JavaScript.valueToCode(
     block,
     "prediction",
-    Blockly.JavaScript.ORDER_NONE,
+    javascript.Order.NONE,
   );
   var dropdown_member = block.getFieldValue("member");
   var code = `${value_prediction}.${dropdown_member}`;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  return [code, javascript.Order.NONE];
 };
 Blockly.Blocks["face_drawbox"] = {
   init: function () {
@@ -430,19 +430,19 @@ javascript.javascriptGenerator.forBlock["face_drawbox"] = function (
   var value_prediction = Blockly.JavaScript.valueToCode(
     block,
     "prediction",
-    Blockly.JavaScript.ORDER_NONE,
+    javascript.Order.NONE,
   );
   var checkbox_with_landmark = block.getFieldValue("with_landmark") === "TRUE";
-  var code = `_overlay_ctx.clearRect(0, 0, _displaySize.width, _displaySize.height)
-  _overlay_ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-  _overlay_ctx.fillRect(${value_prediction}.box.xMin, ${value_prediction}.box.yMin, ${value_prediction}.box.width, ${value_prediction}.box.height);
+  var code = `overlay_ctx.clearRect(0, 0, displaySize.width, displaySize.height)
+  overlay_ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+  overlay_ctx.fillRect(${value_prediction}.box.xMin, ${value_prediction}.box.yMin, ${value_prediction}.box.width, ${value_prediction}.box.height);
   if (${checkbox_with_landmark}) {
-    const _landmarks = ${value_prediction}.keypoints;
-    _overlay_ctx.fillStyle = 'skyblue';
-    for (let _j = 0; _j < _landmarks.length; _j++) {
-        const _x = _landmarks[_j].x;
-        const _y = _landmarks[_j].y;
-        _overlay_ctx.fillRect(_x-2, _y-2, 4, 4);
+    const landmarks = ${value_prediction}.keypoints;
+    overlay_ctx.fillStyle = 'skyblue';
+    for (let j = 0; j < landmarks.length; j++) {
+        const x = landmarks[j].x;
+        const y = landmarks[j].y;
+        overlay_ctx.fillRect(x-2, y-2, 4, 4);
     }
   }
   `;

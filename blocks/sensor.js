@@ -11,7 +11,7 @@ Blockly.defineBlocksWithJsonArray([
     type: "sfmv17_init",
     tooltip: "指紋センサ SFM-V1.7 とのシリアル通信を開始します。",
     helpUrl: "",
-    message0: "指紋センサー(シリアルポート %1 )を %2 として開いて初期化 %3",
+    message0: "指紋センサー(シリアルポート %1 )を %2 として開いて初期化",
     args0: [
       {
         type: "input_value",
@@ -22,10 +22,6 @@ Blockly.defineBlocksWithJsonArray([
         type: "field_variable",
         name: "sfmv17",
         variable: "指紋センサー",
-      },
-      {
-        type: "input_dummy",
-        name: "NAME",
       },
     ],
     previousStatement: null,
@@ -46,10 +42,10 @@ javascript.javascriptGenerator.forBlock["sfmv17_init"] = function (
   const variable_sfmv17 = generator.getVariableName(
     block.getFieldValue("sfmv17"),
   );
-  Blockly.JavaScript.provideFunction_("require_sfmv17", [
+  generator.provideFunction_("require_sfmv17", [
     `const {SFMV17} = require('${settings.data.mod_dir}sfmv17.cjs');`,
   ]);
-  const code = `${variable_sfmv17} = new SFMV17(_sbc);
+  const code = `${variable_sfmv17} = new SFMV17(pi);
 await ${variable_sfmv17}.init(${value_port}, 115200);\n`;
   return code;
 };
@@ -330,15 +326,15 @@ javascript.javascriptGenerator.forBlock["sfmv17_getimage"] = function (
     "handle",
     javascript.Order.ATOMIC,
   );
-  const code = `let _fingerprint = await ${value_handle}.getImage();
-let _ctx = document.getElementById('canvas').getContext('2d');
-let _imgdata = _ctx.createImageData(160, 160);
-for (let pixel=0; pixel<_fingerprint.length; pixel++){
+  const code = `let fingerprint = await ${value_handle}.getImage();
+let ctx = document.getElementById('canvas').getContext('2d');
+let imgdata = ctx.createImageData(160, 160);
+for (let pixel=0; pixel<fingerprint.length; pixel++){
     for (let rgb=0; rgb<3; rgb++)
-        _imgdata.data[pixel*4+rgb] = 0xff-_fingerprint[pixel];
-    _imgdata.data[pixel*4+3] = 0xff;
+        imgdata.data[pixel*4+rgb] = 0xff-fingerprint[pixel];
+    imgdata.data[pixel*4+3] = 0xff;
 }
-_ctx.putImageData(_imgdata,8,8);
+ctx.putImageData(imgdata,8,8);
 `;
   return code;
 };
@@ -423,10 +419,10 @@ javascript.javascriptGenerator.forBlock["inertial_init"] = function (
   const variable_mpu6050 = generator.getVariableName(
     block.getFieldValue("mpu6050"),
   );
-  Blockly.JavaScript.provideFunction_("require_mpu6050", [
+  generator.provideFunction_("require_mpu6050", [
     `const { MPU6050 } = require('${settings.data.mod_dir}mpu6050.cjs');`,
   ]);
-  const code = `${variable_mpu6050} = new MPU6050(_sbc);
+  const code = `${variable_mpu6050} = new MPU6050(pi);
   await ${variable_mpu6050}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -576,11 +572,11 @@ javascript.javascriptGenerator.forBlock["pca9685_start"] = function (
   const variable_handle = generator.getVariableName(
     block.getFieldValue("handle"),
   );
-  Blockly.JavaScript.provideFunction_("require_pca9685", [
+  generator.provideFunction_("require_pca9685", [
     `const { PCA9685 } = require('${settings.data.mod_dir}pca9685.cjs');`,
   ]);
 
-  const code = `${variable_handle} = new PCA9685(_sbc);
+  const code = `${variable_handle} = new PCA9685(pi);
   await ${variable_handle}.init(${settings.data.i2cdev}, ${dropdown_addr});
   await ${variable_handle}.setPWMFreq(50);\n`;
   return code;
@@ -736,12 +732,12 @@ javascript.javascriptGenerator.forBlock["oled_init"] = function (
   const variable_handle = generator.getVariableName(
     block.getFieldValue("handle"),
   );
-  Blockly.JavaScript.provideFunction_("require_oled", [
+  generator.provideFunction_("require_oled", [
     `const {SSD1306} = require('${settings.data.mod_dir}ssd1306.cjs');`,
   ]);
   let size_x, size_y;
   [size_x, size_y] = dropdown_disp_size.split("x");
-  const code = `${variable_handle} = new SSD1306(_sbc, {bus: ${settings.data.i2cdev},address: ${dropdown_i2c_addr}, width: ${size_x}, height: ${size_y}});
+  const code = `${variable_handle} = new SSD1306(pi, {bus: ${settings.data.i2cdev},address: ${dropdown_i2c_addr}, width: ${size_x}, height: ${size_y}});
 await ${variable_handle}.initialize();`;
   return code;
 };
@@ -1049,14 +1045,14 @@ javascript.javascriptGenerator.forBlock["oled_drawJPfont"] = function (
   const value_x = generator.valueToCode(block, "x", javascript.Order.ATOMIC);
   const value_y = generator.valueToCode(block, "y", javascript.Order.ATOMIC);
   const checkbox_sync = block.getFieldValue("sync");
-  Blockly.JavaScript.provideFunction_("require_pngjs", [
-    `const _PNGJS = require("pngjs").PNG;`,
+  generator.provideFunction_("require_pngjs", [
+    `const PNGJS = require("pngjs").PNG;`,
   ]);
-  Blockly.JavaScript.provideFunction_("require_text2png", [
-    `const _text2png = require("${settings.data.mod_dir}text2png.cjs");`,
+  generator.provideFunction_("require_text2png", [
+    `const text2png = require("${settings.data.mod_dir}text2png.cjs");`,
   ]);
   const oledfont = dropdown_font.split(",");
-  const code = `await ${value_handle}.drawRGBAImage(_PNGJS.sync.read (_text2png(${value_text}, '${
+  const code = `await ${value_handle}.drawRGBAImage(PNGJS.sync.read (text2png(${value_text}, '${
     oledfont[0]
   }', ${
     oledfont[1]
@@ -1104,10 +1100,10 @@ javascript.javascriptGenerator.forBlock["gesture_init"] = function (
   const variable_paj7620 = generator.getVariableName(
     block.getFieldValue("paj7620"),
   );
-  Blockly.JavaScript.provideFunction_("require_paj7620", [
+  generator.provideFunction_("require_paj7620", [
     `const { PAJ7620 } = require('${settings.data.mod_dir}paj7620.cjs');`,
   ]);
-  const code = `${variable_paj7620} = new PAJ7620(_sbc);
+  const code = `${variable_paj7620} = new PAJ7620(pi);
 await ${variable_paj7620}.init(${settings.data.i2cdev}, ${dropdown_i2c_addr});\n`;
   return code;
 };
@@ -1150,52 +1146,31 @@ javascript.javascriptGenerator.forBlock["gesture_read"] = function (
   return [code, javascript.Order.ATOMIC];
 };
 
-// var ugjGestureReadDefinition = {
-//   type: "gesture_read",
-//   message0: "ジェスチャーの値",
+// /****************** */
+// /** Gesture Stop ** */
+// /****************** */
+// var ugjGestureStopDefinition = {
+//   type: "gesture_stop",
+//   message0: "ジェスチャーセンサーから切断",
 //   inputsInline: true,
-//   output: "Number",
-//   tooltip: "センサーから現在のジェスチャーの値（０〜９）を読み込みます",
-//   helpUrl: "https://ocoge.club/sensors/paj7620.html",
+//   previousStatement: null,
+//   nextStatement: null,
+//   tooltip: "センサーとの接続を停止します。",
+//   helpUrl: "",
 //   style: "sensor_blocks",
 // };
-// Blockly.Blocks["gesture_read"] = {
+// Blockly.Blocks["gesture_stop"] = {
 //   init: function () {
-//     this.jsonInit(ugjGestureReadDefinition);
+//     this.jsonInit(ugjGestureStopDefinition);
 //   },
 // };
-// javascript.javascriptGenerator.forBlock["gesture_read"] = function (
+// javascript.javascriptGenerator.forBlock["gesture_stop"] = function (
 //   block,
-//   generator
+//   generator,
 // ) {
-//   var code = "await _paj7620.return_gesture()";
-//   return [code, Blockly.JavaScript.ORDER_ATOMIC];
+//   var code = "await _paj7620.stop();\n";
+//   return code;
 // };
-/****************** */
-/** Gesture Stop ** */
-/****************** */
-var ugjGestureStopDefinition = {
-  type: "gesture_stop",
-  message0: "ジェスチャーセンサーから切断",
-  inputsInline: true,
-  previousStatement: null,
-  nextStatement: null,
-  tooltip: "センサーとの接続を停止します。",
-  helpUrl: "",
-  style: "sensor_blocks",
-};
-Blockly.Blocks["gesture_stop"] = {
-  init: function () {
-    this.jsonInit(ugjGestureStopDefinition);
-  },
-};
-javascript.javascriptGenerator.forBlock["gesture_stop"] = function (
-  block,
-  generator,
-) {
-  var code = "await _paj7620.stop();\n";
-  return code;
-};
 
 /******************* */
 /** Init Grid-Eye ** */
@@ -1241,10 +1216,10 @@ javascript.javascriptGenerator.forBlock["grideye_init"] = function (
   const variable_grid_eye = generator.getVariableName(
     block.getFieldValue("grid_eye"),
   );
-  Blockly.JavaScript.provideFunction_("import_amg8833", [
+  generator.provideFunction_("import_amg8833", [
     `const {AMG8833} = require('${settings.data.mod_dir}amg8833.cjs');`,
   ]);
-  const code = `${variable_grid_eye} = new AMG8833(_sbc);
+  const code = `${variable_grid_eye} = new AMG8833(pi);
   await ${variable_grid_eye}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -1281,12 +1256,12 @@ javascript.javascriptGenerator.forBlock["grideye_close"] = function (
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.close();\n`;
   return code;
 };
-// document.getElementById('display_area').removeChild(_grideye_canvas);
+// document.getElementById('display_area').removeChild(grideye_canvas);
 
 /********************** */
 /** Grid-Eye 本体温度 ** */
@@ -1319,10 +1294,10 @@ javascript.javascriptGenerator.forBlock["grideye_thermistor"] = function (
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   var code = `await ${value_handle}.read_thermistor()`;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  return [code, javascript.Order.NONE];
 };
 /**************************** */
 /** Read Temperature Array ** */
@@ -1356,10 +1331,10 @@ javascript.javascriptGenerator.forBlock["grideye_read"] = function (
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   var code = `await ${value_handle}.read_temp_array()`;
-  return [code, Blockly.JavaScript.ORDER_ATOMIC];
+  return [code, javascript.Order.ATOMIC];
 };
 
 /****************************** */
@@ -1382,19 +1357,19 @@ javascript.javascriptGenerator.forBlock["grideye_canvas_show"] = function (
   block,
   generator,
 ) {
-  var code = `const _grideye_canvas = document.createElement('canvas');
-_grideye_canvas.setAttribute('width', 8);
-_grideye_canvas.setAttribute('height', 8);
-document.getElementById('display_area').appendChild(_grideye_canvas);
-_grideye_canvas.style.width = '160px';
-_grideye_canvas.style.height = '160px';
-_grideye_canvas.style.position = 'absolute';
-_grideye_canvas.style.right = '12px';
-_grideye_canvas.style.bottom = '12px';
-_grideye_canvas.style.border = '4px solid white';
-_grideye_canvas.style.borderRadius = '4px';
-const _grideye_ctx = _grideye_canvas.getContext('2d', {willReadFrequently: true});
-const _grideye_imgData = _grideye_ctx.createImageData(8, 8);
+  var code = `const grideye_canvas = document.createElement('canvas');
+grideye_canvas.setAttribute('width', 8);
+grideye_canvas.setAttribute('height', 8);
+document.getElementById('display_area').appendChild(grideye_canvas);
+grideye_canvas.style.width = '160px';
+grideye_canvas.style.height = '160px';
+grideye_canvas.style.position = 'absolute';
+grideye_canvas.style.right = '12px';
+grideye_canvas.style.bottom = '12px';
+grideye_canvas.style.border = '4px solid white';
+grideye_canvas.style.borderRadius = '4px';
+const grideyectx = grideye_canvas.getContext('2d', {willReadFrequently: true});
+const grideye_imgData = grideyectx.createImageData(8, 8);
 `;
   return code;
 };
@@ -1454,24 +1429,24 @@ javascript.javascriptGenerator.forBlock["draw_grideyedata"] = function (
   block,
   generator,
 ) {
-  var value_amg8833data = Blockly.JavaScript.valueToCode(
+  var value_amg8833data = generator.valueToCode(
     block,
     "amg8833data",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   var colour_color_high = block.getFieldValue("color_high");
-  var value_temp_high = Blockly.JavaScript.valueToCode(
+  var value_temp_high = generator.valueToCode(
     block,
     "temp_high",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   var colour_color_low = block.getFieldValue("color_low");
-  var value_temp_low = Blockly.JavaScript.valueToCode(
+  var value_temp_low = generator.valueToCode(
     block,
     "temp_low",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
-  var functionName = Blockly.JavaScript.provideFunction_("_mapVal", [
+  var functionName = generator.provideFunction_("_mapVal", [
     "const " +
       Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
       " = (val, inMin, inMax, outMin, outMax) => {",
@@ -1486,18 +1461,18 @@ javascript.javascriptGenerator.forBlock["draw_grideyedata"] = function (
   lr = "0x" + colour_color_low.slice(1, 3);
   lg = "0x" + colour_color_low.slice(3, 5);
   lb = "0x" + colour_color_low.slice(5, 7);
-  var code = `  const _color_range = [[${lr}, ${hr}], [${lg}, ${hg}], [${lb}, ${hb}]];
-  let _grideye_data = ${value_amg8833data};//読み取りブロックを入力に直接接続できるようにする
-  for (let raw = 0; raw < _grideye_imgData.height; raw++) {
-      for (let col = 0; col < _grideye_imgData.width; col++) {
+  var code = `  const color_range = [[${lr}, ${hr}], [${lg}, ${hg}], [${lb}, ${hb}]];
+  let grideye_data = ${value_amg8833data};//読み取りブロックを入力に直接接続できるようにする
+  for (let raw = 0; raw < grideye_imgData.height; raw++) {
+      for (let col = 0; col < grideye_imgData.width; col++) {
           for (let rgb = 0; rgb < 3; rgb++) {
-              let pixel = ${functionName}(_grideye_data[raw][col], ${value_temp_low}, ${value_temp_high}, _color_range[rgb][0], _color_range[rgb][1]);
-              _grideye_imgData.data[((raw * _grideye_canvas.width * 4) + col * 4) + rgb] = pixel;
+              let pixel = ${functionName}(grideye_data[raw][col], ${value_temp_low}, ${value_temp_high}, color_range[rgb][0], color_range[rgb][1]);
+              grideye_imgData.data[((raw * grideye_canvas.width * 4) + col * 4) + rgb] = pixel;
           }
-          _grideye_imgData.data[((raw * _grideye_canvas.width * 4) + col * 4) + 3] = 0xff;
+          grideye_imgData.data[((raw * grideye_canvas.width * 4) + col * 4) + 3] = 0xff;
       }
   }
-  _grideye_ctx.putImageData(_grideye_imgData, 0, 0);
+  grideyectx.putImageData(grideye_imgData, 0, 0);
 `;
   return code;
 };
@@ -1522,22 +1497,22 @@ javascript.javascriptGenerator.forBlock["teachable_machine"] = function (
   block,
   generator,
 ) {
-  Blockly.JavaScript.provideFunction_("import_ts", [
-    `const _tf = require('@tensorflow/tfjs');`,
+  generator.provideFunction_("import_ts", [
+    `const tf = require('@tensorflow/tfjs');`,
   ]);
-  Blockly.JavaScript.provideFunction_("import_backend", [
-    `const _backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
+  generator.provideFunction_("import_backend", [
+    `const backend = require('@tensorflow/tfjs-backend-${settings.data.tfjs_backend}');`,
   ]);
-  Blockly.JavaScript.provideFunction_("import_mobilenet", [
-    `const _mobilenet = require('@tensorflow-models/mobilenet');`,
+  generator.provideFunction_("import_mobilenet", [
+    `const mobilenet = require('@tensorflow-models/mobilenet');`,
   ]);
-  Blockly.JavaScript.provideFunction_("import_knn", [
-    `const _knnClassifier = require('@tensorflow-models/knn-classifier');`,
+  generator.provideFunction_("import_knn", [
+    `const knnClassifier = require('@tensorflow-models/knn-classifier');`,
   ]);
-  var code = `await _tf.setBackend('${settings.data.tfjs_backend}');
-const _net = await _mobilenet.load({ version: 1, alpha: 0.25 }); // 高速・低精度
-const _classifier = _knnClassifier.create();
-console.log(_tf.getBackend());
+  var code = `await tf.setBackend('${settings.data.tfjs_backend}');
+const net = await mobilenet.load({ version: 1, alpha: 0.25 }); // 高速・低精度
+const classifier = knnClassifier.create();
+console.log(tf.getBackend());
 `;
   return code;
 };
@@ -1560,7 +1535,7 @@ javascript.javascriptGenerator.forBlock["grideye_predict_class"] = function (
   block,
   generator,
 ) {
-  var functionName = Blockly.JavaScript.provideFunction_(
+  var functionName = generator.provideFunction_(
     // left output にするための関数化
     "_predictClass",
     [
@@ -1575,8 +1550,8 @@ javascript.javascriptGenerator.forBlock["grideye_predict_class"] = function (
       `}`,
     ],
   );
-  var code = `await ${functionName}(_grideye_canvas, _classifier, _net)`;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  var code = `await ${functionName}(grideye_canvas, classifier, net)`;
+  return [code, javascript.Order.NONE];
 };
 /******************************************** */
 /** ラベルをつけて Example をデータセットに追加 ** */
@@ -1605,12 +1580,12 @@ javascript.javascriptGenerator.forBlock["grideye_add_example"] = function (
   block,
   generator,
 ) {
-  var value_class_id = Blockly.JavaScript.valueToCode(
+  var value_class_id = generator.valueToCode(
     block,
     "class_id",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
-  var code = `_classifier.addExample (_net.infer(_grideye_canvas, true), ${value_class_id});`;
+  var code = `classifier.addExample (net.infer(grideye_canvas, true), ${value_class_id});`;
   return code;
 };
 /*************************** */
@@ -1631,8 +1606,8 @@ javascript.javascriptGenerator.forBlock["tensorset_stringify"] = function (
   block,
   generator,
 ) {
-  var code = `JSON.stringify( Object.entries(_classifier.getClassifierDataset()).map(([label, data])=>[label, Array.from(data.dataSync()), data.shape]) )`;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  var code = `JSON.stringify( Object.entries(classifier.getClassifierDataset()).map(([label, data])=>[label, Array.from(data.dataSync()), data.shape]) )`;
+  return [code, javascript.Order.NONE];
 };
 /***************************************** */
 /** jsonをデータセットに戻して分類器にセット ** */
@@ -1659,12 +1634,12 @@ javascript.javascriptGenerator.forBlock["tensorset_parse"] = function (
   block,
   generator,
 ) {
-  var value_class_data_json = Blockly.JavaScript.valueToCode(
+  var value_class_data_json = generator.valueToCode(
     block,
     "class_data_json",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
-  var code = `_classifier.setClassifierDataset( Object.fromEntries( JSON.parse(${value_class_data_json}).map(([label, data, shape])=>[label, _tf.tensor(data, shape)]) ) );`;
+  var code = `classifier.setClassifierDataset( Object.fromEntries( JSON.parse(${value_class_data_json}).map(([label, data, shape])=>[label, tf.tensor(data, shape)]) ) );`;
   return code;
 };
 
@@ -1693,7 +1668,7 @@ Blockly.defineBlocksWithJsonArray([
 javascript.javascriptGenerator.forBlock["temp"] = function (block, generator) {
   var number_temp = block.getFieldValue("temp");
   var code = `${number_temp}`;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  return [code, javascript.Order.NONE];
 };
 
 /********* */
@@ -1741,10 +1716,10 @@ javascript.javascriptGenerator.forBlock["bme280_init"] = function (
   const variable_bme280 = generator.getVariableName(
     block.getFieldValue("bme280"),
   );
-  Blockly.JavaScript.provideFunction_("import_bme280", [
+  generator.provideFunction_("import_bme280", [
     `const {BME280} = require('${settings.data.mod_dir}bme280.cjs');`,
   ]);
-  const code = `${variable_bme280} = new BME280(_sbc);
+  const code = `${variable_bme280} = new BME280(pi);
   await ${variable_bme280}.init(${settings.data.i2cdev}, ${dropdown_addr});\n`;
   return code;
 };
@@ -1779,10 +1754,10 @@ javascript.javascriptGenerator.forBlock["bme280_data"] = function (
   const value_handle = generator.valueToCode(
     block,
     "handle",
-    Blockly.JavaScript.ORDER_ATOMIC,
+    javascript.Order.ATOMIC,
   );
   const code = `await ${value_handle}.readSensorData()`;
-  return [code, Blockly.JavaScript.ORDER_ATOMIC];
+  return [code, javascript.Order.ATOMIC];
 };
 // BME280との接続を閉じる
 Blockly.defineBlocksWithJsonArray([
@@ -1819,94 +1794,3 @@ javascript.javascriptGenerator.forBlock["bme280_close"] = function (
   const code = `await ${value_handle}.close();\n`;
   return code;
 };
-
-// /*********************************** */
-// /*** サーボモータ (Hardware PWM 出力) ***/
-// /*********************************** */
-// Blockly.defineBlocksWithJsonArray([
-//   {
-//     type: "servo_start",
-//     tooltip: "使用できる GPIO 番号は次のコマンドで調査 : $ pinctl | grep PWM",
-//     helpUrl: "",
-//     message0: "サーボ出力を開始 %1",
-//     args0: [
-//       {
-//         type: "input_dummy",
-//         name: "NAME",
-//       },
-//     ],
-//     previousStatement: null,
-//     nextStatement: null,
-//     style: "sensor_blocks",
-//     inputsInline: true,
-//   },
-// ]);
-// javascript.javascriptGenerator.forBlock["servo_start"] = function (
-//   block,
-//   generator
-// ) {
-//   Blockly.JavaScript.provideFunction_("require_servo", [
-//     `const {SERVO} = require('${settings.data.mod_dir}servo');`,
-//   ]);
-
-//   const code = `const _servo = new SERVO(${settings.data.pwmchip}, ${settings.data.pwmchan});
-// await _servo.start();`;
-//   return code;
-// };
-// /*** 停止 */
-// Blockly.defineBlocksWithJsonArray([
-//   {
-//     type: "servo_stop",
-//     tooltip: "サーボモータ使用後は必ず停止してください。",
-//     helpUrl: "",
-//     message0: "サーボモータを停止 %1",
-//     args0: [
-//       {
-//         type: "input_dummy",
-//         name: "NAME",
-//       },
-//     ],
-//     previousStatement: null,
-//     nextStatement: null,
-//     style: "sensor_blocks",
-//   },
-// ]);
-// javascript.javascriptGenerator.forBlock["servo_stop"] = function (
-//   block,
-//   generator
-// ) {
-//   const code = `await _servo.stop();`;
-//   return code;
-// };
-// /*** 回転 */
-// registerFieldAngle();
-// Blockly.defineBlocksWithJsonArray([
-//   {
-//     type: "servo_angle",
-//     tooltip: "",
-//     helpUrl: "",
-//     message0: "サーボモータの角度を %1 にする %2",
-//     args0: [
-//       {
-//         type: "field_angle",
-//         name: "ang",
-//         value: 90,
-//       },
-//       {
-//         type: "input_dummy",
-//         name: "NAME",
-//       },
-//     ],
-//     previousStatement: null,
-//     nextStatement: null,
-//     style: "sensor_blocks",
-//   },
-// ]);
-// javascript.javascriptGenerator.forBlock["servo_angle"] = function (
-//   block,
-//   generator
-// ) {
-//   const angle_ang = block.getFieldValue("ang");
-//   const code = `await _servo.angle(${angle_ang});`;
-//   return code;
-// };

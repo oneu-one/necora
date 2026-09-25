@@ -83,7 +83,7 @@ const category_multimedia = [
         kind: "block",
         type: "face_location",
         blockxml:
-          '<block type="face_location"><field name="member">topLeft[0]</field><value name="prediction"><block type="lists_getIndex"><mutation statement="false" at="true"></mutation><field name="MODE">GET</field><field name="WHERE">FROM_START</field><value name="VALUE"><block type="variables_get"><field name="VAR" iid="_W]y2e!_~suF]yM;LQ1~">検出結果</field></block></value><value name="AT"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block></value></block>',
+          '<block type="face_location"><field name="member">box.xMin</field><value name="prediction"><block type="lists_getIndex"><mutation statement="false" at="true"></mutation><field name="MODE">GET</field><field name="WHERE">FROM_START</field><value name="VALUE"><block type="variables_get"><field name="VAR" iid="_W]y2e!_~suF]yM;LQ1~">検出結果</field></block></value><value name="AT"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block></value></block>',
       },
       {
         kind: "block",

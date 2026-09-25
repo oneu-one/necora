@@ -1,8 +1,8 @@
 /*** 指紋センサ SFM-V1.7 ***/
 
 class SFMV17 {
-  constructor(sbc) {
-    this.sbc = sbc;
+  constructor(pi) {
+    this.pi = pi;
     this.SFM_SERIAL_TIMEOUT = 8000; // serial timeout (ms)
     this.SFM_DEFAULT_USERROLE = 0x03; // Default user role for register
 
@@ -45,19 +45,19 @@ class SFMV17 {
   };
   // Send command to uart and retruns responce tuple
   sendCmd = async (cmdType, p1, p2, p3) => {
-    while (await this.sbc.serial_data_available(this.ser_hand))
-      await this.sbc.serial_read(this.ser_hand);
+    while (await this.pi.serial_data_available(this.ser_hand))
+      await this.pi.serial_read(this.ser_hand);
     let cmdBuffer = [0xf5, cmdType, p1, p2, p3, 0, 0, 0xf5];
     cmdBuffer[6] = this.getCheckSum(cmdBuffer);
-    await this.sbc.serial_write(this.ser_hand, cmdBuffer);
+    await this.pi.serial_write(this.ser_hand, cmdBuffer);
   };
   getAck = async () => {
     let ackBuffer = Buffer.alloc(0); //Buffer.from([]);
     let timer = this.SFM_SERIAL_TIMEOUT;
     while (timer--) {
-      const available = await this.sbc.serial_data_available(this.ser_hand);
+      const available = await this.pi.serial_data_available(this.ser_hand);
       if (available > 0) {
-        const [bytes, rbuf] = await this.sbc.serial_read(
+        const [bytes, rbuf] = await this.pi.serial_read(
           this.ser_hand,
           available,
         );
@@ -65,9 +65,9 @@ class SFMV17 {
       } else if (ackBuffer.length >= 8) {
         // 1/100秒待ってデバイス側にデータが残っていないか再チェック
         // await delay(10);
-        await this.sbc.lgu_sleep(0.01);
+        await this.pi.sleep(0.01);
         timer -= 10;
-        if ((await this.sbc.serial_data_available(this.ser_hand)) > 0) continue;
+        if ((await this.pi.serial_data_available(this.ser_hand)) > 0) continue;
         // もうデータは残っていないらしい
         if (ackBuffer[6] == this.getCheckSum(ackBuffer))
           if (ackBuffer.length > 8) {
@@ -88,7 +88,7 @@ class SFMV17 {
         else return [null, null, null, this.SFM_ACK_FAIL];
       }
       // await delay(1);
-      await this.sbc.lgu_sleep(0.001);
+      await this.pi.sleep(0.001);
     }
     return [null, null, null, SFM_ACK_SERIALTIMEOUT];
   };
@@ -104,7 +104,7 @@ class SFMV17 {
 
   // Initialize module... just connect uart
   init = async (serial_port, baud = 115200) => {
-    this.ser_hand = await this.sbc.serial_open(serial_port, baud);
+    this.ser_hand = await this.pi.serial_open(serial_port, baud);
     return this.ser_hand;
   };
 
@@ -204,7 +204,7 @@ class SFMV17 {
   // Disconnect from uart
   stop = async () => {
     if (this.ser_hand >= 0) {
-      await this.sbc.serial_close(this.ser_hand);
+      await this.pi.serial_close(this.ser_hand);
       this.ser_hand = -1;
     }
   };

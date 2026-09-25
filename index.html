@@ -22,14 +22,20 @@
     <fieldset style="margin-bottom: 4px;">
     <legend>GPIO</legend>
     <div>
-      Host: <input type="text" id="host" name="host" value="localhost" placeholder="localhost" />
+      Library: <input type="radio" id="pigpio" name="gpiolib" value="pigpio" checked>
+      <label for="pigpio">pigpio</label>
+      <input type="radio" id="rgpio" name="gpiolib" value="rgpio">
+      <label for="rgpio">rgpio</label>
     </div>
     <div>
+      Host: <input type="text" id="host" name="host" value="localhost" placeholder="localhost" />
+    </div>
+    <!-- <div>
       Port: <input type="number" id="port" name="port" min="0" max="65535" value="8889" placeholder="8889" />
     </div>
     <div>
       Chip: <input type="number" id="gpiodev" name="gpiodev" min="0" max="64" value="4" />
-    </div>
+    </div> -->
     </fieldset>
     <fieldset style="margin-bottom: 4px;">
       <legend>I2C</legend>
@@ -82,19 +88,19 @@
 
     <!-- ツールバー（右） -->
     <div class="toolbar-right" id="toolbar-right">
-      <button class="toolbarButton" title="JavaScriptのプログラムコードを表示します。" onclick="_necora.showCode()"><i
+      <button class="toolbarButton" title="JavaScriptのプログラムコードを表示します。" onclick="necora.showCode()"><i
           class="fas fa-code"></i>
         CODE</button>
-      <button class="toolbarButton" title="ワークスペースや設定を削除して最初から始めます。" onclick="_necora.newWorkspace()"><i
+      <button class="toolbarButton" title="ワークスペースや設定を削除して最初から始めます。" onclick="necora.newWorkspace()"><i
           class="fas fa-file"></i> 新規</button>
-      <button onclick="_necora.loadWorkspaceFromFile()" class="toolbarButton"
+      <button onclick="necora.loadWorkspaceFromFile()" class="toolbarButton"
         title="ファイルに保存したブロックプログラムを読み込みます。既にワークスペースにあるブロックは削除されません。"><i class="fas fa-folder-open"></i> 開く</button>
-      <button onclick="_necora.saveWorkspaceAs()" class="toolbarButton" title="ワークスペースのブロックプログラムをファイルに保存します。"><i
+      <button onclick="necora.saveWorkspaceAs()" class="toolbarButton" title="ワークスペースのブロックプログラムをファイルに保存します。"><i
           class="fas fa-save"></i>
         保存</button>
-      <button class="toolbarButton" title="設定ダイアログを開きます。" onclick="_necora.showSettings()"><i
+      <button class="toolbarButton" title="設定ダイアログを開きます。" onclick="necora.showSettings()"><i
           class="fas fa-cog"></i> 設定</button>
-      <button class="toolbarButton" title="ブロックプログラムを実行します。" onclick="_necora.runCode()" id="runbtn"><i
+      <button class="toolbarButton" title="ブロックプログラムを実行します。" onclick="necora.runCode()" id="runbtn"><i
           class="fas fa-play-circle"></i> 実行</button>
       <button class="iconbutton redo" title="アプリを再読み込みします。" onclick="reload_ui()"><i
           class="fas fa-redo-alt"></i></button>
@@ -143,16 +149,16 @@
 
   <script>
     // モジュール (index.mjs) のエクスポートされたメソッドをどこでも使えるようにする
-    var _necora;
+    var necora;
     // UI のリロード
     function reload_ui() {
-      _necora.rgreset(); // rgpiod から切断
+      necora.pigreset(); // gpiod から切断
       location.reload();
     }
   </script>
   <script type="module">
     import * as o from './index.mjs';
-    _necora = o;
+    necora = o;
   </script>
 
   <!-- <script src="./test.js"></script> -->

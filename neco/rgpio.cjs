@@ -1,8 +1,11 @@
+// ※ _pigpio_command 周りの修正は未適用
+
 /***
  * ローカルまたは同一ネットワーク上のシングルボードコンピュータで走る rgpiod デーモンに接続して
  * GPIO/I2C/Serial などを操作するためのモジュール
  * rgpio.py の一部を CommonJS に書き換え（コールバック・スレッディングは省略）
  * 大部分を Gemini ちゃんにお任せした。ご了承ください。
+ * ※ pigpio と同じコードで動作するためのラッパー関数を追加
  *
  * 例：
  * const rgpio = require('@necora/rgpio');
@@ -73,6 +76,12 @@ const SET_OPEN_SOURCE = 16;
 const SET_PULL_UP = 32;
 const SET_PULL_DOWN = 64;
 const SET_PULL_NONE = 128;
+// for pigpio compatibility
+const INPUT = 0;
+const OUTPUT = 1;
+const PUD_OFF = SET_PULL_NONE;
+const PUD_DOWN = SET_PULL_DOWN;
+const PUD_UP = SET_PULL_UP;
 
 // GPIO event flags
 const RISING_EDGE = 1;
@@ -521,15 +530,23 @@ function connectAsync(port, host) {
  */
 function readBytesAsync(socket, count) {
   return new Promise((resolve, reject) => {
-    let buf = socket._rxBuffer || Buffer.alloc(0);
+    // ソケット上の残バッファを取得
+    socket._rxBuffer = socket._rxBuffer || Buffer.alloc(0);
+
+    const checkAndResolve = () => {
+      if (socket._rxBuffer.length >= count) {
+        const result = socket._rxBuffer.subarray(0, count);
+        socket._rxBuffer = socket._rxBuffer.subarray(count);
+        cleanup();
+        resolve(result);
+        return true;
+      }
+      return false;
+    };
 
     const onData = (chunk) => {
-      buf = Buffer.concat([buf, chunk]);
-      if (buf.length >= count) {
-        cleanup();
-        socket._rxBuffer = buf.slice(count); // 超過分を次回用に保持
-        resolve(buf.slice(0, count));
-      }
+      socket._rxBuffer = Buffer.concat([socket._rxBuffer, chunk]);
+      checkAndResolve();
     };
 
     const onError = (err) => {
@@ -542,13 +559,9 @@ function readBytesAsync(socket, count) {
       socket.removeListener("error", onError);
     };
 
-    // 既にバッファに必要な量が溜まっている場合
-    if (buf.length >= count) {
-      socket._rxBuffer = buf.slice(count);
-      return resolve(buf.slice(0, count));
-    }
+    // 既に必要なバイト数が溜まっている場合
+    if (checkAndResolve()) return;
 
-    socket._rxBuffer = null;
     socket.on("data", onData);
     socket.on("error", onError);
   });
@@ -625,6 +638,20 @@ async function create_sbc(
 ) {
   const instance = new _sbc();
   await instance._init(host, port, show_errors);
+  return instance;
+}
+
+// for pigpio compatibility
+async function create_pi(
+  host = process.env.LG_ADDR || "localhost",
+  port = process.env.LG_PORT || 8889,
+  show_errors = true,
+) {
+  const instance = new _sbc();
+  await instance._init(host, port, show_errors);
+  if (instance.connected) {
+    instance.chip_hand = await instance.gpiochip_open(4); // chip 4: Raspberry Pi 5
+  }
   return instance;
 }
 
@@ -831,6 +858,27 @@ class _sbc {
     extBuf.writeUInt32LE(pulse_cycles, 20);
     return _u2i(
       await _lg_command_ext_nolock(this.sl_s, _CMD_PX, 24, [extBuf], 0, 6, 0),
+    );
+  }
+
+  // サーボモーター
+  async tx_servo(
+    handle,
+    gpio,
+    pulse_width,
+    servo_frequency = 50,
+    pulse_offset = 0,
+    pulse_cycles = 0,
+  ) {
+    const extBuf = Buffer.alloc(24);
+    extBuf.writeUInt32LE(handle & 0xffff, 0);
+    extBuf.writeUInt32LE(gpio, 4);
+    extBuf.writeUInt32LE(pulse_width, 8);
+    extBuf.writeUInt32LE(servo_frequency, 12);
+    extBuf.writeUInt32LE(pulse_offset, 16);
+    extBuf.writeUInt32LE(pulse_cycles, 20);
+    return _u2i(
+      await _lg_command_ext_nolock(this.sl_s, _CMD_SX, 24, [extBuf], 0, 6, 0),
     );
   }
 
@@ -1107,6 +1155,57 @@ class _sbc {
 
   // 指定秒数処理を停止
   lgu_sleep = (sec) => new Promise((r) => setTimeout(r, sec * 1000));
+
+  /**************************** */
+  /** pigpio互換インターフェース ** */
+  /***************************** */
+
+  async set_mode(gpio, mode) {
+    if (mode === OUTPUT)
+      return await this.gpio_claim_output(this.chip_hand, gpio);
+    // else if (mode === INPUT)
+    //   return await this.gpio_claim_input(this.chip_hand, gpio);
+  }
+
+  async set_pull_up_down(gpio, pud) {
+    if (pud === PUD_OFF)
+      return await this.gpio_claim_input(this.chip_hand, gpio, SET_PULL_NONE);
+    else if (pud === PUD_DOWN)
+      return await this.gpio_claim_input(this.chip_hand, gpio, SET_PULL_DOWN);
+    else if (pud === PUD_UP)
+      return await this.gpio_claim_input(this.chip_hand, gpio, SET_PULL_UP);
+  }
+
+  async read(gpio) {
+    return await this.gpio_read(this.chip_hand, gpio);
+  }
+  async write(gpio, value) {
+    return await this.gpio_write(this.chip_hand, gpio, value);
+  }
+
+  async set_PWM_frequency(user_gpio, frequency) {
+    this.pwm_frequency = frequency;
+    return await this.tx_pwm(
+      this.chip_hand,
+      user_gpio,
+      this.pwm_frequency,
+      this.pwm_dutycycle,
+    );
+  }
+
+  async set_PWM_dutyratio(user_gpio, dutycycle) {
+    this.pwm_dutycycle = dutycycle;
+    return await this.tx_pwm(
+      this.chip_hand,
+      user_gpio,
+      this.pwm_frequency,
+      this.pwm_dutycycle,
+    );
+  }
+
+  async set_servo_pulsewidth(user_gpio, pulse_width) {
+    return await this.tx_servo(this.chip_hand, user_gpio, pulse_width);
+  }
 }
 
 module.exports = {
@@ -1114,6 +1213,12 @@ module.exports = {
   SET_PULL_UP: SET_PULL_UP,
   SET_PULL_DOWN: SET_PULL_DOWN,
   SET_PULL_NONE: SET_PULL_NONE,
+  pi: create_pi,
+  INPUT,
+  OUTPUT,
+  PUD_OFF,
+  PUD_DOWN,
+  PUD_UP,
 };
 
-// Python -> Node.js 変換アシスト：Gemini, Copilot
+// Python -> Node.js 変換アシスト：Gemini, GitHub Copilot
