@@ -1,8 +1,9 @@
 /***
- * ローカルまたは同一ネットワーク上のシングルボードコンピュータで走る pigpiod デーモンに接続して
+ * ローカルまたは同一ネットワーク上の Raspberry Piで走る pigpiod デーモンに接続して
  * GPIO/I2C/Serial などを操作するためのモジュール
  * pigpio.py の一部を CommonJS に書き換え（コールバックは省略）
  * 大部分を Gemini ちゃんにお任せした。ご了承ください。
+ * そしてさらに最終確認を ChatGPT にお任せしました。
  *
  * 例：
  * const pigpio = require('./pigpio.cjs');
@@ -577,8 +578,8 @@ const _errors = [
   [PI_ONLY_ON_BCM2711, "only available on BCM2711"],
 ];
 
-const_except_a =
-  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n{}";
+const _except_a =
+  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 
 const _except_z =
   "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%";
@@ -625,6 +626,16 @@ function error_text(errnum) {
 
 // ユーティリティ関数
 
+// データを pigpio 用の Buffer に変換するユーティリティ関数
+function toPigpioBuffer(data) {
+  if (Buffer.isBuffer(data)) return data;
+  if (Array.isArray(data)) return Buffer.from(data);
+  if (typeof data === "string") {
+    return Buffer.from(data, "latin1");
+  }
+  throw new TypeError("data must be Buffer, Array, or string");
+}
+
 // 符号なし32bit整数を符号付き32bit整数に変換する関数
 function u2i(uint32) {
   // JavaScriptで32bit符号付き整数にキャストする最も高速な方法（ビット演算を利用）
@@ -641,115 +652,197 @@ function _u2i(status) {
   return v;
 }
 
-function _u2i_list(lst) {
-  lst[0] = u2i(lst[0]);
-  if (lst[0] < 0) {
-    if (exceptions) {
-      throw new PigpioError(error_text(lst[0]));
-    }
-  }
-  return lst;
-}
-
 // ソケット接続（await/async, timeout 対応）
 function connectAsync(host, port) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      socket.destroy(new Error("Connect timeout"));
-    }, TIMEOUT * 1000);
-    const socket = net.connect(port, host, () => {
-      clearTimeout(timer);
-      resolve(socket);
-    });
-    socket.on("error", (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
+    let settled = false;
+    let timer = null;
 
-/**
- * 指定バイト数に達するまでソケットからデータを同期・非同期風に読み込むヘルパー関数
- */
-function readBytesAsync(socket, count) {
-  return new Promise((resolve, reject) => {
-    // ソケット上の残バッファを取得
-    socket._rxBuffer = socket._rxBuffer || Buffer.alloc(0);
+    const socket = net.connect(port, host);
 
-    const checkAndResolve = () => {
-      if (socket._rxBuffer.length >= count) {
-        const result = socket._rxBuffer.subarray(0, count);
-        socket._rxBuffer = socket._rxBuffer.subarray(count);
-        cleanup();
-        resolve(result);
-        return true;
-      }
-      return false;
+    const cleanup = () => {
+      if (timer !== null) clearTimeout(timer);
+      socket.removeListener("connect", onConnect);
+      socket.removeListener("error", onError);
     };
 
-    const onData = (chunk) => {
-      socket._rxBuffer = Buffer.concat([socket._rxBuffer, chunk]);
-      checkAndResolve();
+    const onConnect = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(socket);
     };
 
     const onError = (err) => {
+      if (settled) return;
+      settled = true;
       cleanup();
       reject(err);
     };
 
-    const cleanup = () => {
-      socket.removeListener("data", onData);
-      socket.removeListener("error", onError);
-    };
+    socket.once("connect", onConnect);
+    socket.once("error", onError);
 
-    // 既に必要なバイト数が溜まっている場合
-    if (checkAndResolve()) return;
-
-    socket.on("data", onData);
-    socket.on("error", onError);
+    timer = setTimeout(() => {
+      if (settled) return;
+      const err = new Error("Connect timeout");
+      err.code = "ETIMEDOUT";
+      settled = true;
+      cleanup();
+      socket.destroy();
+      reject(err);
+    }, TIMEOUT * 1000);
   });
 }
-// function readBytesAsync(socket, count) {
-//   return new Promise((resolve, reject) => {
-//     let buf = socket._rxBuffer || Buffer.alloc(0);
 
-//     const onData = (chunk) => {
-//       buf = Buffer.concat([buf, chunk]);
-//       if (buf.length >= count) {
-//         cleanup();
-//         socket._rxBuffer = buf.slice(count); // 超過分を次回用に保持
-//         resolve(buf.slice(0, count));
-//       }
-//     };
+// pigpio の TCP 通信は「16 バイトのヘッダ + 必要なら追加データ」です。
+// TCP にはメッセージ境界がないため、data イベントをコマンド単位で扱わず、
+// ソケット全体に対して 1 本の受信バッファを持ち、readExact() で必要な
+// バイト数だけ切り出します。
+//
+// 重要：コマンドの Promise キューと組み合わせることで、1 コマンドについて
+// 「送信 → 16 バイト応答 → 追加データ受信」までを完全に 1 トランザクション
+// として扱います。これにより i2c_read_i2c_block_data() や serial_read() の
+// 追加データが次のコマンドの応答として誤認されることを防ぎます。
 
-//     const onError = (err) => {
-//       cleanup();
-//       reject(err);
-//     };
+class PigpioSocketError extends Error {
+  constructor(message, cause = null) {
+    super(message);
+    this.name = "PigpioSocketError";
+    if (cause) this.cause = cause;
+  }
+}
 
-//     const cleanup = () => {
-//       socket.removeListener("data", onData);
-//       socket.removeListener("error", onError);
-//     };
+function attachSocketReader(socket) {
+  socket._rxBuffer = Buffer.alloc(0);
+  socket._rxWaiters = [];
+  socket._rxClosedError = null;
 
-//     // 既にバッファに必要な量が溜まっている場合
-//     if (buf.length >= count) {
-//       socket._rxBuffer = buf.slice(count);
-//       return resolve(buf.slice(0, count));
-//     }
+  const drain = () => {
+    while (socket._rxWaiters.length > 0) {
+      const waiter = socket._rxWaiters[0];
 
-//     socket._rxBuffer = null;
-//     socket.on("data", onData);
-//     socket.on("error", onError);
-//   });
-// }
+      if (socket._rxBuffer.length >= waiter.count) {
+        socket._rxWaiters.shift();
+        const result = socket._rxBuffer.subarray(0, waiter.count);
+        socket._rxBuffer = socket._rxBuffer.subarray(waiter.count);
+        waiter.resolve(result);
+        continue;
+      }
+
+      // まだデータが足りないので次の data イベントを待つ。
+      break;
+    }
+  };
+
+  const fail = (err) => {
+    if (socket._rxClosedError) return;
+
+    const error =
+      err instanceof Error
+        ? err
+        : new PigpioSocketError("pigpio socket closed");
+
+    socket._rxClosedError = error;
+
+    const waiters = socket._rxWaiters.splice(0);
+    for (const waiter of waiters) waiter.reject(error);
+  };
+
+  socket._onPigpioData = (chunk) => {
+    if (!Buffer.isBuffer(chunk)) chunk = toPigpioBuffer(chunk);
+    if (chunk.length === 0) return;
+
+    socket._rxBuffer =
+      socket._rxBuffer.length === 0
+        ? chunk
+        : Buffer.concat([socket._rxBuffer, chunk]);
+
+    drain();
+  };
+
+  socket._onPigpioError = (err) => {
+    fail(new PigpioSocketError("pigpio socket error", err));
+  };
+
+  socket._onPigpioEnd = () => {
+    fail(new PigpioSocketError("pigpio socket ended by peer"));
+  };
+
+  socket._onPigpioClose = (hadError) => {
+    if (!socket._rxClosedError) {
+      fail(
+        new PigpioSocketError(
+          hadError
+            ? "pigpio socket closed because of an error"
+            : "pigpio socket closed",
+        ),
+      );
+    }
+  };
+
+  socket.on("data", socket._onPigpioData);
+  socket.on("error", socket._onPigpioError);
+  socket.on("end", socket._onPigpioEnd);
+  socket.on("close", socket._onPigpioClose);
+}
+
+function detachSocketReader(socket) {
+  if (!socket) return;
+
+  if (socket._onPigpioData) {
+    socket.removeListener("data", socket._onPigpioData);
+  }
+  if (socket._onPigpioError) {
+    socket.removeListener("error", socket._onPigpioError);
+  }
+  if (socket._onPigpioEnd) {
+    socket.removeListener("end", socket._onPigpioEnd);
+  }
+  if (socket._onPigpioClose) {
+    socket.removeListener("close", socket._onPigpioClose);
+  }
+
+  socket._onPigpioData = null;
+  socket._onPigpioError = null;
+  socket._onPigpioEnd = null;
+  socket._onPigpioClose = null;
+}
+
+function readBytesAsync(socket, count) {
+  if (!socket) {
+    return Promise.reject(
+      new PigpioSocketError("pigpio socket is not connected"),
+    );
+  }
+  if (!Number.isInteger(count) || count < 0) {
+    return Promise.reject(
+      new RangeError("count must be a non-negative integer"),
+    );
+  }
+  if (count === 0) return Promise.resolve(Buffer.alloc(0));
+
+  if (socket._rxClosedError) {
+    return Promise.reject(socket._rxClosedError);
+  }
+
+  if (socket._rxBuffer.length >= count) {
+    const result = socket._rxBuffer.subarray(0, count);
+    socket._rxBuffer = socket._rxBuffer.subarray(count);
+    return Promise.resolve(result);
+  }
+
+  return new Promise((resolve, reject) => {
+    socket._rxWaiters.push({ count, resolve, reject });
+  });
+}
 
 // pigpio.cjs を require してから最初に呼び出す関数
 // pi クラスを作成して初期化（pigpiodへ接続など）してからクラスのインスタンスを返す
 // pi() の名前でエクスポート（書式を pigpio Python に準拠）
 async function create_pi(
-  host = process.env.LG_ADDR || "localhost",
-  port = process.env.LG_PORT || 8888,
+  host = process.env.PIGPIO_ADDR || "localhost",
+  port = process.env.PIGPIO_PORT || 8888,
   show_errors = true,
 ) {
   const instance = new _pi();
@@ -778,6 +871,10 @@ class _pi {
     try {
       this.sock_cmd = await connectAsync(host, port);
       this.sock_cmd.setNoDelay(true);
+      attachSocketReader(this.sock_cmd);
+      this.sock_cmd.once("close", () => {
+        this.connected = false;
+      });
       this.connected = true;
     } catch (err) {
       // エラー内容に応じた分岐判定（簡易版）
@@ -795,72 +892,91 @@ class _pi {
 
       if (show_errors) {
         const s = `Can't connect to pigpiod at ${host}(${port})`;
-        if (typeof _except_a === "function") console.log(_except_a(s));
+        console.log(_except_a);
         if (exception === 1) console.log(_except_1);
         else if (exception === 2) console.log(_except_2);
         else console.log(_except_3);
-        if (typeof _except_z === "string") console.log(_except_z);
+        console.log(_except_z);
       }
     } else {
       // プログラム正常終了時のクリーンアップ処理の登録
       process.on("exit", () => this.stop());
-
-      const user = process.env.LG_USER || "";
-      if (user.length > 0) {
-        if (typeof this.set_user === "function") {
-          await this.set_user(user);
-        }
-      }
     }
   }
 
   // pigpiod から切断
   async stop() {
     this.connected = false;
-    if (this.sock_cmd) {
-      this.sock_cmd.destroy(); // ソケットを完全に閉じる
-      this.sock_cmd = null;
+
+    const socket = this.sock_cmd;
+    this.sock_cmd = null;
+
+    if (socket) {
+      const error = new PigpioSocketError("pigpio connection stopped");
+      if (!socket._rxClosedError) socket._rxClosedError = error;
+
+      if (Array.isArray(socket._rxWaiters)) {
+        const waiters = socket._rxWaiters.splice(0);
+        for (const waiter of waiters) waiter.reject(error);
+      }
+
+      detachSocketReader(socket);
+      socket.destroy();
     }
   }
 
-  // pigpio コマンド送信
-  // Socket をロックする代わりに Promise キューを使用してコマンドの割り込みを防ぐためのラッパー関数
-  async _pigpio_command(cmd, p1 = 0, p2 = 0, extents = []) {
-    // キューにつないで前のコマンドのレスポンス受信が終わるまで待機
-    const result = new Promise((resolve, reject) => {
-      this._commandQueue = this._commandQueue.then(async () => {
-        try {
-          const res = await this._pigpio_cmd(cmd, p1, p2, extents);
-          resolve(res);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+  // コマンドを必ず一つずつ実行する。
+  // 重要なのは「16 バイトの応答を読むところ」ではなく、追加データがある
+  // コマンドなら、その追加データまで読み終えるところまでをキューで保護すること。
+  _enqueueCommand(task) {
+    const result = this._commandQueue.then(task, task);
 
+    // 次のコマンドには必ず進める。ただし現在の呼び出し側には元の
+    // Promise を返すので、個々のコマンドのエラーは失われない。
+    this._commandQueue = result.catch(() => undefined);
     return result;
   }
+
+  // pigpio コマンド送信。ここでは「16 バイトの標準レスポンス」までを読む。
+  // 可変長レスポンスを持つコマンドは、このメソッドを直接キュー内から呼び、
+  // 続けて _rxbuf() まで同じキューの中で実行する。
+  async _pigpio_command(cmd, p1 = 0, p2 = 0, extents = []) {
+    return this._enqueueCommand(async () => {
+      return this._pigpio_cmd(cmd, p1, p2, extents);
+    });
+  }
+
   // pigpio コマンド送信関数実体
+  // この関数自身はキューイングしない。呼び出し元が必要なトランザクション全体を
+  // _enqueueCommand() で保護する。
   async _pigpio_cmd(cmd, p1, p2, extents) {
+    if (!this.connected || !this.sock_cmd) {
+      throw new PigpioSocketError("pigpio is not connected");
+    }
+
     let p3 = 0;
-    for (const x of extents) p3 += x.length;
+    for (const x of extents) {
+      if (!Buffer.isBuffer(x)) {
+        throw new TypeError("pigpio command extent must be a Buffer");
+      }
+      p3 += x.length;
+    }
 
     const header = Buffer.alloc(_SOCK_CMD_LEN);
-    header.writeUInt32LE(cmd, 0);
-    header.writeUInt32LE(p1, 4);
-    header.writeUInt32LE(p2, 8);
-    header.writeUInt32LE(p3, 12);
+    header.writeUInt32LE(cmd >>> 0, 0);
+    header.writeUInt32LE(p1 >>> 0, 4);
+    header.writeUInt32LE(p2 >>> 0, 8);
+    header.writeUInt32LE(p3 >>> 0, 12);
 
-    const sendBuf = Buffer.concat([header, ...extents]);
+    const sendBuf =
+      extents.length === 0 ? header : Buffer.concat([header, ...extents]);
 
-    try {
-      this.sock_cmd.write(sendBuf);
-      const resBuf = await readBytesAsync(this.sock_cmd, _SOCK_CMD_LEN);
-      return resBuf.readInt32LE(12);
-    } catch (err) {
-      // console.error(`Error in _pigpio_cmd: ${err}`);
-      return u2i(PI_CMD_INTERRUPTED);
-    }
+    // TCP の write() は「1 回の write = 1 回の受信」を意味しない。
+    // 送信側では write()、受信側では readBytesAsync() がそれぞれストリームとして扱う。
+    this.sock_cmd.write(sendBuf);
+
+    const resBuf = await readBytesAsync(this.sock_cmd, _SOCK_CMD_LEN);
+    return resBuf.readInt32LE(12);
   }
 
   // GPIOピンモード
@@ -892,16 +1008,21 @@ class _pi {
   }
   async set_PWM_dutyratio(user_gpio, dutyratio) {
     // necora オリジナル関数：デューティ比をパーセンテージで指定
-    const dutycycle = (dutyratio * 255) / 100;
+    if (dutyratio < 0 || dutyratio > 100)
+      throw new RangeError("dutyratio must be between 0 and 100");
+    const dutycycle = Math.round((dutyratio * 255) / 100);
     return _u2i(await this._pigpio_command(_PI_CMD_PWM, user_gpio, dutycycle));
   }
 
   // サーボモータ
   async set_servo_pulsewidth(user_gpio, pulsewidth) {
-    if (pulsewidth < 500) pulsewidth = 500;
-    if (pulsewidth > 2500) pulsewidth = 2500;
+    // pigpio 互換: 0 はサーボパルス出力を停止する特別な値。
     return _u2i(
-      await this._pigpio_command(_PI_CMD_SERVO, user_gpio, pulsewidth),
+      await this._pigpio_command(
+        _PI_CMD_SERVO,
+        user_gpio,
+        Math.trunc(pulsewidth),
+      ),
     );
   }
 
@@ -940,7 +1061,7 @@ class _pi {
     return _u2i(await this._pigpio_command(_PI_CMD_I2CRW, handle, reg));
   }
   async i2c_write_i2c_block_data(handle, reg, data) {
-    const extBuf = Buffer.from(data);
+    const extBuf = toPigpioBuffer(data);
     if (extBuf.length > 0) {
       return _u2i(
         await this._pigpio_command(_PI_CMD_I2CWI, handle, reg, [extBuf]),
@@ -951,17 +1072,21 @@ class _pi {
   }
   async i2c_read_i2c_block_data(handle, reg, count) {
     const extBuf = Buffer.alloc(4);
-    extBuf.writeUInt32LE(count, 0);
-    let bytes = PI_CMD_INTERRUPTED;
-    let rdata = "";
-    bytes = _u2i(
-      await this._pigpio_command(_PI_CMD_I2CRI, handle, reg, [extBuf]),
-    );
-    if (bytes > 0) rdata = await this._rxbuf(bytes);
-    return _u2i_list([bytes, rdata]);
+    extBuf.writeUInt32LE(count >>> 0, 0);
+
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(
+        await this._pigpio_cmd(_PI_CMD_I2CRI, handle, reg, [extBuf]),
+      );
+
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+
+      // Python版と同じく、read系の負値エラーはそのまま返す。
+      return [bytes, rdata];
+    });
   }
   async i2c_write_device(handle, data) {
-    const extBuf = Buffer.from(data);
+    const extBuf = toPigpioBuffer(data);
     if (extBuf.length > 0) {
       return _u2i(
         await this._pigpio_command(_PI_CMD_I2CWD, handle, 0, [extBuf]),
@@ -973,7 +1098,7 @@ class _pi {
   async serial_open(tty, baud, ser_flags = 0) {
     return _u2i(
       await this._pigpio_command(_PI_CMD_SERO, baud, ser_flags, [
-        Buffer.from(tty),
+        toPigpioBuffer(tty),
       ]),
     );
   }
@@ -981,14 +1106,16 @@ class _pi {
     return _u2i(await this._pigpio_command(_PI_CMD_SERC, handle));
   }
   async serial_read(handle, count = 1000) {
-    let bytes = PI_CMD_INTERRUPTED;
-    let rdata = "";
-    bytes = _u2i(await this._pigpio_command(_PI_CMD_SERR, handle, count));
-    if (bytes > 0) rdata = await this._rxbuf(bytes);
-    return _u2i_list([bytes, rdata]);
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(await this._pigpio_cmd(_PI_CMD_SERR, handle, count));
+
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+
+      return [bytes, rdata];
+    });
   }
   async serial_write(handle, data) {
-    const extBuf = Buffer.from(data);
+    const extBuf = toPigpioBuffer(data);
     return _u2i(await this._pigpio_command(_PI_CMD_SERW, handle, 0, [extBuf]));
   }
   async serial_data_available(handle) {
