@@ -60,7 +60,7 @@ class MPU6050 {
     if (r < 0) throw new Error(`Failed to open I2C device: ${r}\n`);
     else this.i2c_hand = r;
     // Wake up the MPU-6050 since it starts in sleep mode
-    this.pi.lgu_sleep(0.1);
+    this.pi.sleep(0.1);
     await this.pi.i2c_write_byte_data(this.i2c_hand, this.ACCEL_CONFIG, 0x00);
     await this.pi.i2c_write_byte_data(this.i2c_hand, this.GYRO_CONFIG, 0x00);
     await this.pi.i2c_write_byte_data(this.i2c_hand, this.MPU_CONFIG, 0x00);

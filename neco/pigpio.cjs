@@ -949,7 +949,7 @@ class _pi {
   // pigpio コマンド送信関数実体
   // この関数自身はキューイングしない。呼び出し元が必要なトランザクション全体を
   // _enqueueCommand() で保護する。
-  async _pigpio_cmd(cmd, p1, p2, extents) {
+  async _pigpio_cmd(cmd, p1, p2, extents = []) {
     if (!this.connected || !this.sock_cmd) {
       throw new PigpioSocketError("pigpio is not connected");
     }
@@ -1007,7 +1007,7 @@ class _pi {
     return _u2i(await this._pigpio_command(_PI_CMD_PWM, user_gpio, dutycycle));
   }
   async set_PWM_dutyratio(user_gpio, dutyratio) {
-    // necora オリジナル関数：デューティ比をパーセンテージで指定
+    // デューティ比をパーセンテージで指定：オリジナルの pigpio.py には存在しないので注意
     if (dutyratio < 0 || dutyratio > 100)
       throw new RangeError("dutyratio must be between 0 and 100");
     const dutycycle = Math.round((dutyratio * 255) / 100);
@@ -1122,8 +1122,7 @@ class _pi {
     return _u2i(await this._pigpio_command(_PI_CMD_SERDA, handle));
   }
 
-  // ツール
-  // 指定秒数だけ処理を停止
+  // 指定秒数だけ処理を停止：オリジナルの pigpio.py には存在しないので注意（rgpio.py には似たような関数が存在する）
   sleep(seconds) {
     return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
   }

@@ -720,7 +720,7 @@ javascript.javascriptGenerator.forBlock["serial_close"] = function (
 Blockly.defineBlocksWithJsonArray([
   {
     type: "serial_read",
-    message0: "シリアルデバイス %1 から %2 文字受け取る",
+    message0: "シリアルデバイス %1 から %2 バイトを %3 で受け取る",
     args0: [
       {
         type: "input_value",
@@ -732,11 +732,19 @@ Blockly.defineBlocksWithJsonArray([
         name: "count",
         check: "Number",
       },
+      {
+        type: "field_dropdown",
+        name: "encoding",
+        options: [
+          ["文字列", "string"],
+          ["バイト列", "buffer"],
+        ],
+      },
     ],
     inputsInline: true,
     output: null,
     tooltip:
-      "シリアルデバイスから指定したバイト数のデータを受け取ります。バイト数がわからない場合は十分に大きな数字（1000など）を入れましょう。",
+      "シリアルデバイスから指定したバイト数のデータを受け取ります。バイト数がわからない場合は十分に大きな数字（1000など）を入れましょう。\nデータ形式は文字列かバイト列（buffer）を選べます。",
     helpUrl: "",
     style: "gpio_blocks",
   },
@@ -755,7 +763,9 @@ javascript.javascriptGenerator.forBlock["serial_read"] = function (
     "count",
     javascript.Order.ATOMIC,
   );
+  var dropdown_encoding = block.getFieldValue("encoding");
   var code = `(await pi.serial_read(${value_ser_hand}, ${value_count}))[1]`;
+  if (dropdown_encoding === "string") code += `.toString()`;
   return [code, javascript.Order.ATOMIC];
 };
 
@@ -800,7 +810,7 @@ javascript.javascriptGenerator.forBlock["serial_write"] = function (
     "data",
     javascript.Order.ATOMIC,
   );
-  var code = `await pi.serial_write(${value_ser_hand}, ${value_data});\n`;
+  var code = `await pi.serial_write(${value_ser_hand}, Buffer.from(${value_data}));\n`;
   return code;
 };
 

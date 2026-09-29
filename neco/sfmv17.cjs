@@ -90,7 +90,7 @@ class SFMV17 {
       // await delay(1);
       await this.pi.sleep(0.001);
     }
-    return [null, null, null, SFM_ACK_SERIALTIMEOUT];
+    return [null, null, null, this.SFM_ACK_SERIALTIMEOUT];
   };
 
   // Rapping sendCmd... Returns tuple
