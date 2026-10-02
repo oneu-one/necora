@@ -146,7 +146,7 @@ Blockly.defineBlocksWithJsonArray([
 ]);
 javascript.javascriptGenerator.forBlock["play_sound"] = function (block) {
   const dropdown_sound = block.getFieldValue("sound");
-  const code = `playSound('${dropdown_sound}');\n`;
+  const code = `necora.playSound('${dropdown_sound}');\n`;
   return code;
 };
 

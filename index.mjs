@@ -743,6 +743,7 @@ var workspace = Blockly.inject("blocklyDiv", {
   },
   zoom: { startScale: 1.0, controls: true },
   trashcan: true,
+  sounds: true,
 });
 // window リサイズ時に workspace もリサイズ
 var onresize = function (e) {
@@ -765,6 +766,3 @@ var onresize = function (e) {
 window.addEventListener("resize", onresize, false);
 onresize();
 Blockly.svgResize(workspace);
-
-// // カンマ区切りで、ユーザー変数と衝突させたくない名前（予約語）を登録します
-// Blockly.JavaScript.addReservedWords("mod,myModuleInstance,myModSecret");

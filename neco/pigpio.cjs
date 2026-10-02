@@ -3,7 +3,7 @@
  * GPIO/I2C/Serial などを操作するためのモジュール
  * pigpio.py の一部を CommonJS に書き換え（コールバックは省略）
  * 大部分を Gemini ちゃんにお任せした。ご了承ください。
- * そしてさらに最終確認を ChatGPT にお任せしました。
+ * そしてさらに最終確認をチャッピーさんに丸投げ。めっちゃ添削された...
  *
  * 例：
  * const pigpio = require('./pigpio.cjs');
@@ -13,7 +13,7 @@
  * 全てのメソッドは await で呼び出す
  * その他基本的な書式は pigpio Python (https://abyz.me.uk/rpi/pigpio/python.html) に準拠
  *
- * 動作確認済みの関数
+ * 動作確認済みの公開関数
  * * pigpio.pi
  * * stop
  * * set_mode
@@ -53,7 +53,7 @@ const ON = 1;
 const HIGH = 1;
 const SET = 1;
 
-const TIMEOUT = 2; // 接続タイムアウト（秒）
+const TIMEOUT = 4; // 接続タイムアウト（秒）
 
 // GPIO edges
 const RISING_EDGE = 0;
@@ -658,7 +658,12 @@ function connectAsync(host, port) {
     let settled = false;
     let timer = null;
 
-    const socket = net.connect(port, host);
+    const socket = net.connect({
+      host: host,
+      port: port,
+      family: 4,
+    });
+    // const socket = net.connect(port, host);
 
     const cleanup = () => {
       if (timer !== null) clearTimeout(timer);
