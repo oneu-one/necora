@@ -1090,6 +1090,19 @@ class _pi {
       return [bytes, rdata];
     });
   }
+  async i2c_read_device(handle, count) {
+    // const extBuf = Buffer.alloc(4);
+    // extBuf.writeUInt32LE(count >>> 0, 0);
+
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(await this._pigpio_cmd(_PI_CMD_I2CRD, handle, count));
+
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+
+      // Python版と同じく、read系の負値エラーはそのまま返す。
+      return [bytes, rdata];
+    });
+  }
   async i2c_write_device(handle, data) {
     const extBuf = toPigpioBuffer(data);
     if (extBuf.length > 0) {

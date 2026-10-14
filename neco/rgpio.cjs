@@ -1,10 +1,8 @@
-// ※ _pigpio_command 周りの修正は未適用
-
 /***
  * ローカルまたは同一ネットワーク上のシングルボードコンピュータで走る rgpiod デーモンに接続して
  * GPIO/I2C/Serial などを操作するためのモジュール
- * rgpio.py の一部を CommonJS に書き換え（コールバック・スレッディングは省略）
- * 大部分を Gemini ちゃんにお任せした。ご了承ください。
+ * rgpio.py の一部を CommonJS に書き換え（コールバック省略）
+ * Gemini, GitHub Copilot, ChatGPT に手伝って貰ったョ
  * ※ pigpio と同じコードで動作するためのラッパー関数を追加
  *
  * 例：
@@ -40,12 +38,6 @@
  * * serial_read
  * * serial_data_available
  * * lgu_sleep
- *
- * 未確認（コメントアウト）※ 自分用メモ
- * * i2c_write_byte
- * * i2c_write_block_data
- * * i2c_read_block_data
- * * i2c_read_device
  ***/
 
 const net = require("node:net");
@@ -482,6 +474,16 @@ function error_text(errnum) {
 
 // ユーティリティ関数
 
+// データを rgpio 用の Buffer に変換するユーティリティ関数
+function toRgpioBuffer(data) {
+  if (Buffer.isBuffer(data)) return data;
+  if (Array.isArray(data)) return Buffer.from(data);
+  if (typeof data === "string") {
+    return Buffer.from(data, "latin1");
+  }
+  throw new TypeError("data must be Buffer, Array, or string");
+}
+
 // 符号なし32bit整数を符号付き32bit整数に変換する関数
 function u2i(uint32) {
   // JavaScriptで32bit符号付き整数にキャストする最も高速な方法（ビット演算を利用）
@@ -498,134 +500,182 @@ function _u2i(status) {
   return v;
 }
 
-function _u2i_list(lst) {
-  lst[0] = u2i(lst[0]);
-  if (lst[0] < 0) {
-    if (exceptions) {
-      throw new RGpioError(error_text(lst[0]));
-    }
-  }
-  return lst;
-}
-
 // ソケット接続（await/async, timeout 対応）
-function connectAsync(port, host) {
+function connectAsync(host, port) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      socket.destroy(new Error("Connect timeout"));
-    }, TIMEOUT * 1000);
-    const socket = net.connect(port, host, () => {
-      clearTimeout(timer);
-      resolve(socket);
-    });
-    socket.on("error", (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
+    let settled = false;
+    let timer = null;
 
-/**
- * 指定バイト数に達するまでソケットからデータを同期・非同期風に読み込むヘルパー関数
- */
-function readBytesAsync(socket, count) {
-  return new Promise((resolve, reject) => {
-    // ソケット上の残バッファを取得
-    socket._rxBuffer = socket._rxBuffer || Buffer.alloc(0);
+    const socket = net.connect({
+      host: host,
+      port: port,
+      family: 4,
+    });
+    // const socket = net.connect(port, host);
 
-    const checkAndResolve = () => {
-      if (socket._rxBuffer.length >= count) {
-        const result = socket._rxBuffer.subarray(0, count);
-        socket._rxBuffer = socket._rxBuffer.subarray(count);
-        cleanup();
-        resolve(result);
-        return true;
-      }
-      return false;
+    const cleanup = () => {
+      if (timer !== null) clearTimeout(timer);
+      socket.removeListener("connect", onConnect);
+      socket.removeListener("error", onError);
     };
 
-    const onData = (chunk) => {
-      socket._rxBuffer = Buffer.concat([socket._rxBuffer, chunk]);
-      checkAndResolve();
+    const onConnect = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(socket);
     };
 
     const onError = (err) => {
+      if (settled) return;
+      settled = true;
       cleanup();
       reject(err);
     };
 
-    const cleanup = () => {
-      socket.removeListener("data", onData);
-      socket.removeListener("error", onError);
-    };
+    socket.once("connect", onConnect);
+    socket.once("error", onError);
 
-    // 既に必要なバイト数が溜まっている場合
-    if (checkAndResolve()) return;
-
-    socket.on("data", onData);
-    socket.on("error", onError);
+    timer = setTimeout(() => {
+      if (settled) return;
+      const err = new Error("Connect timeout");
+      err.code = "ETIMEDOUT";
+      settled = true;
+      cleanup();
+      socket.destroy();
+      reject(err);
+    }, TIMEOUT * 1000);
   });
 }
 
-// コマンド送信（引数なし/基本形式）
-async function _lg_command_nolock(sl_s, cmd, Q = 0, L = 0, H = 0) {
-  try {
-    // Python: struct.pack('IIHHHH', MAGIC, 0, cmd, Q, L, H)
-    // I=4byte(UInt32), H=2byte(UInt16) -> 合計16バイト
-    const sendBuf = Buffer.alloc(16);
-    sendBuf.writeUInt32LE(MAGIC, 0);
-    sendBuf.writeUInt32LE(0, 4);
-    sendBuf.writeUInt16LE(cmd, 8);
-    sendBuf.writeUInt16LE(Q, 10);
-    sendBuf.writeUInt16LE(L, 12);
-    sendBuf.writeUInt16LE(H, 14);
-
-    sl_s.write(sendBuf);
-
-    // レスポンスの受信待ち（_SOCK_CMD_LEN = 16 バイト）
-    const resBuf = await readBytesAsync(sl_s, 16);
-
-    // Python: struct.unpack('I12s', ...) -> 先頭4バイトがstatus
-    const status = resBuf.readUInt32LE(0);
-    return status;
-  } catch (err) {
-    return u2i(CMD_INTERRUPTED);
+class RgpioSocketError extends Error {
+  constructor(message, cause = null) {
+    super(message);
+    this.name = "RgpioSocketError";
+    if (cause) this.cause = cause;
   }
 }
 
-// コマンド送信（拡張データあり形式）
-async function _lg_command_ext_nolock(
-  sl_s,
-  cmd,
-  p3,
-  extents,
-  Q = 0,
-  L = 0,
-  H = 0,
-) {
-  try {
-    const header = Buffer.alloc(16);
-    header.writeUInt32LE(MAGIC, 0);
-    header.writeUInt32LE(p3, 4);
-    header.writeUInt16LE(cmd, 8);
-    header.writeUInt16LE(Q, 10);
-    header.writeUInt16LE(L, 12);
-    header.writeUInt16LE(H, 14);
+function attachSocketReader(socket) {
+  socket._rxBuffer = Buffer.alloc(0);
+  socket._rxWaiters = [];
+  socket._rxClosedError = null;
 
-    // 拡張データの結合
-    const buffers = [header];
-    for (const x of extents) {
-      buffers.push(x); // extents の要素は全て Buffer でなければならない。書き込みデータを持つ関数は特に気を付けること。
+  const drain = () => {
+    while (socket._rxWaiters.length > 0) {
+      const waiter = socket._rxWaiters[0];
+
+      if (socket._rxBuffer.length >= waiter.count) {
+        socket._rxWaiters.shift();
+        const result = socket._rxBuffer.subarray(0, waiter.count);
+        socket._rxBuffer = socket._rxBuffer.subarray(waiter.count);
+        waiter.resolve(result);
+        continue;
+      }
+
+      // まだデータが足りないので次の data イベントを待つ。
+      break;
     }
-    const ext = Buffer.concat(buffers);
-    sl_s.write(ext);
+  };
 
-    const resBuf = await readBytesAsync(sl_s, 16);
-    const status = resBuf.readUInt32LE(0);
-    return status;
-  } catch (err) {
-    return u2i(CMD_INTERRUPTED);
+  const fail = (err) => {
+    if (socket._rxClosedError) return;
+
+    const error =
+      err instanceof Error ? err : new RgpioSocketError("rgpio socket closed");
+
+    socket._rxClosedError = error;
+
+    const waiters = socket._rxWaiters.splice(0);
+    for (const waiter of waiters) waiter.reject(error);
+  };
+
+  socket._onRgpioData = (chunk) => {
+    if (!Buffer.isBuffer(chunk)) chunk = toRgpioBuffer(chunk);
+    if (chunk.length === 0) return;
+
+    socket._rxBuffer =
+      socket._rxBuffer.length === 0
+        ? chunk
+        : Buffer.concat([socket._rxBuffer, chunk]);
+
+    drain();
+  };
+
+  socket._onRgpioError = (err) => {
+    fail(new RgpioSocketError("rgpio socket error", err));
+  };
+
+  socket._onRgpioEnd = () => {
+    fail(new RgpioSocketError("rgpio socket ended by peer"));
+  };
+
+  socket._onRgpioClose = (hadError) => {
+    if (!socket._rxClosedError) {
+      fail(
+        new RgpioSocketError(
+          hadError
+            ? "rgpio socket closed because of an error"
+            : "rgpio socket closed",
+        ),
+      );
+    }
+  };
+
+  socket.on("data", socket._onRgpioData);
+  socket.on("error", socket._onRgpioError);
+  socket.on("end", socket._onRgpioEnd);
+  socket.on("close", socket._onRgpioClose);
+}
+
+function detachSocketReader(socket) {
+  if (!socket) return;
+
+  if (socket._onRgpioData) {
+    socket.removeListener("data", socket._onRgpioData);
   }
+  if (socket._onRgpioError) {
+    socket.removeListener("error", socket._onRgpioError);
+  }
+  if (socket._onRgpioEnd) {
+    socket.removeListener("end", socket._onRgpioEnd);
+  }
+  if (socket._onRgpioClose) {
+    socket.removeListener("close", socket._onRgpioClose);
+  }
+
+  socket._onRgpioData = null;
+  socket._onRgpioError = null;
+  socket._onRgpioEnd = null;
+  socket._onRgpioClose = null;
+}
+
+function readBytesAsync(socket, count) {
+  if (!socket) {
+    return Promise.reject(
+      new RgpioSocketError("rgpio socket is not connected"),
+    );
+  }
+  if (!Number.isInteger(count) || count < 0) {
+    return Promise.reject(
+      new RangeError("count must be a non-negative integer"),
+    );
+  }
+  if (count === 0) return Promise.resolve(Buffer.alloc(0));
+
+  if (socket._rxClosedError) {
+    return Promise.reject(socket._rxClosedError);
+  }
+
+  if (socket._rxBuffer.length >= count) {
+    const result = socket._rxBuffer.subarray(0, count);
+    socket._rxBuffer = socket._rxBuffer.subarray(count);
+    return Promise.resolve(result);
+  }
+
+  return new Promise((resolve, reject) => {
+    socket._rxWaiters.push({ count, resolve, reject });
+  });
 }
 
 // rgpio.cjs を require してから最初に呼び出す関数
@@ -659,35 +709,28 @@ async function create_pi(
 class _sbc {
   constructor() {
     this.connected = false;
-    this.sl_s = null;
-    this._host = "";
-    this._port = 0;
+    this.sock_cmd = null; // コマンド用ソケット
+    this._commandQueue = Promise.resolve(); // コマンドの割り込みを防ぐための Promise キュー
   }
 
   async _rxbuf(count) {
-    return await readBytesAsync(this.sl_s, count);
+    return await readBytesAsync(this.sock_cmd, count);
   }
 
-  async _init(
-    host = process.env.LG_ADDR || "localhost",
-    port = process.env.LG_PORT || 8889,
-    show_errors = true,
-  ) {
-    this.connected = true;
-    this.sl_s = null;
-    let numericPort = parseInt(port, 10);
-    if (host === "") {
-      host = "localhost";
-    }
-
-    this._host = host;
-    this._port = numericPort;
+  async _init(host, port, show_errors) {
+    if (!host) host = "localhost";
+    if (typeof port === "string") port = parseInt(port, 10);
 
     let exception = 0;
 
     try {
-      let client = await connectAsync(numericPort, host);
-      this.sl_s = client;
+      this.sock_cmd = await connectAsync(host, port);
+      this.sock_cmd.setNoDelay(true);
+      attachSocketReader(this.sock_cmd);
+      this.sock_cmd.once("close", () => {
+        this.connected = false;
+      });
+      this.connected = true;
     } catch (err) {
       // エラー内容に応じた分岐判定（簡易版）
       if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
@@ -702,12 +745,14 @@ class _sbc {
       this.sl_s = null;
 
       if (show_errors) {
-        const s = `Can't connect to rgpiod at ${host}(${numericPort})`;
-        if (typeof _except_a === "function") console.log(_except_a(s));
+        const s = `Can't connect to rgpiod at ${host}(${port})`;
+        console.log(s);
+        // const s = `Can't connect to rgpiod at ${host}(${numericPort})`;
+        console.log(_except_a);
         if (exception === 1) console.log(_except_1);
         else if (exception === 2) console.log(_except_2);
         else console.log(_except_3);
-        if (typeof _except_z === "string") console.log(_except_z);
+        console.log(_except_z);
       }
     } else {
       // プログラム正常終了時のクリーンアップ処理の登録
@@ -725,11 +770,90 @@ class _sbc {
   // rgpiod から切断
   async stop() {
     this.connected = false;
-    if (this.sl_s !== null) {
-      await _lg_command_nolock(this.sl_s, _CMD_FREE);
-      this.sl_s.destroy(); // ソケットを完全に閉じる
-      this.sl_s = null;
+
+    const socket = this.sock_cmd;
+    this.sock_cmd = null;
+
+    if (socket) {
+      await _rgpio_command(_CMD_FREE);
+
+      const error = new RgpioSocketError("rgpio connection stopped");
+      if (!socket._rxClosedError) socket._rxClosedError = error;
+
+      if (Array.isArray(socket._rxWaiters)) {
+        const waiters = socket._rxWaiters.splice(0);
+        for (const waiter of waiters) waiter.reject(error);
+      }
+
+      detachSocketReader(socket);
+      socket.destroy();
     }
+  }
+
+  // コマンドを必ず一つずつ実行する。
+  // 重要なのは「16 バイトの応答を読むところ」ではなく、追加データがある
+  // コマンドなら、その追加データまで読み終えるところまでをキューで保護すること。
+  _enqueueCommand(task) {
+    const result = this._commandQueue.then(task, task);
+
+    // 次のコマンドには必ず進める。ただし現在の呼び出し側には元の
+    // Promise を返すので、個々のコマンドのエラーは失われない。
+    this._commandQueue = result.catch(() => undefined);
+    return result;
+  }
+
+  // rgpio コマンド送信。ここでは「16 バイトの標準レスポンス」までを読む。
+  // 可変長レスポンスを持つコマンドは、このメソッドを直接キュー内から呼び、
+  // 続けて _rxbuf() まで同じキューの中で実行する。
+  async _rgpio_command(cmd, extents = [], Q = 0, L = 0, H = 0) {
+    return this._enqueueCommand(async () => {
+      return this._rgpio_cmd(cmd, extents, Q, L, H);
+    });
+  }
+
+  // rgpio コマンド送信関数実体
+  // この関数自身はキューイングしない。呼び出し元が必要なトランザクション全体を
+  // _enqueueCommand() で保護する。
+  async _rgpio_cmd(cmd, extents = [], Q = 0, L = 0, H = 0) {
+    if (!this.connected || !this.sock_cmd) {
+      throw new RgpioSocketError("rgpio is not connected");
+    }
+
+    let p3 = 0;
+    for (const x of extents) {
+      if (!Buffer.isBuffer(x)) {
+        throw new TypeError("rgpio command extent must be a Buffer");
+      }
+      p3 += x.length;
+    }
+
+    // Python: struct.pack('IIHHHH', MAGIC, 0, cmd, Q, L, H)
+    // I=4byte(UInt32), H=2byte(UInt16) -> 合計16バイト
+    const header = Buffer.alloc(16);
+    header.writeUInt32LE(MAGIC, 0);
+    header.writeUInt32LE(p3, 4);
+    header.writeUInt16LE(cmd, 8);
+    header.writeUInt16LE(Q, 10);
+    header.writeUInt16LE(L, 12);
+    header.writeUInt16LE(H, 14);
+
+    // const header = Buffer.alloc(_SOCK_CMD_LEN);
+    // header.writeUInt32LE(cmd >>> 0, 0);
+    // header.writeUInt32LE(p1 >>> 0, 4);
+    // header.writeUInt32LE(p2 >>> 0, 8);
+    // header.writeUInt32LE(p3 >>> 0, 12);
+
+    const sendBuf =
+      extents.length === 0 ? header : Buffer.concat([header, ...extents]);
+
+    // TCP の write() は「1 回の write = 1 回の受信」を意味しない。
+    // 送信側では write()、受信側では readBytesAsync() がそれぞれストリームとして扱う。
+    this.sock_cmd.write(sendBuf);
+
+    // レスポンスの受信待ち（_SOCK_CMD_LEN = 16 バイト）
+    const resBuf = await readBytesAsync(this.sock_cmd, _SOCK_CMD_LEN);
+    // Python: struct.unpack('I12s', ...) -> 先頭4バイトがstatus
+    return resBuf.readInt32LE(0);
   }
 
   // GPIO 操作系メソッド
@@ -739,52 +863,46 @@ class _sbc {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(gpiochip, 0);
 
-    let handle = u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GO, 4, [extBuf], 0, 1, 0),
-    );
+    let handle = u2i(await this._rgpio_command(_CMD_GO, [extBuf], 0, 1, 0));
     if (handle >= 0) {
       handle = handle | (gpiochip << 16);
     }
     return _u2i(handle);
   }
 
-  // gpiochip_close: 指定したハンドルの gpiochip を閉じる
+  // : 指定したハンドルの gpiochip を閉じる
   async gpiochip_close(handle) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle & 0xffff, 0);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GC, 4, [extBuf], 0, 1, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GC, [extBuf], 0, 1, 0));
   }
 
-  // gpio_get_chip_info: 指定したハンドルの gpiochip 情報を取得
-  async gpio_get_chip_info(handle) {
-    let bytes = u2i(CMD_INTERRUPTED);
-    const extBuf = Buffer.alloc(4);
-    extBuf.writeUInt32LE(handle & 0xffff, 0);
-    let rdata = "";
+  // // gpio_get_chip_info: 指定したハンドルの gpiochip 情報を取得
+  // async gpio_get_chip_info(handle) {
+  //   let bytes = u2i(CMD_INTERRUPTED);
+  //   const extBuf = Buffer.alloc(4);
+  //   extBuf.writeUInt32LE(handle & 0xffff, 0);
+  //   let rdata = "";
 
-    bytes = u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GIC, 4, [extBuf], 0, 1, 0),
-    );
+  //   bytes = u2i(await this._rgpio_command(_CMD_GIC, [extBuf], 0, 1, 0));
 
-    let lines = 0,
-      name = "",
-      label = "";
-    if (bytes > 0) {
-      rdata = await this._rxbuf(bytes);
-      // Python: struct.unpack("I32s32s", rdata) -> 4byte + 32byte + 32byte
-      lines = rdata.readUInt32LE(0);
-      name = rdata.toString("utf8", 4, 36).replace(/\0+$/, "");
-      label = rdata.toString("utf8", 36, 68).replace(/\0+$/, "");
-      bytes = OKAY;
-    } else {
-      lines = 0;
-      name = "";
-      label = "";
-    }
-    return _u2i_list([bytes, lines, name, label]);
-  }
+  //   let lines = 0,
+  //     name = "",
+  //     label = "";
+  //   if (bytes > 0) {
+  //     rdata = await this._rxbuf(bytes);
+  //     // Python: struct.unpack("I32s32s", rdata) -> 4byte + 32byte + 32byte
+  //     lines = rdata.readUInt32LE(0);
+  //     name = rdata.toString("utf8", 4, 36).replace(/\0+$/, "");
+  //     label = rdata.toString("utf8", 36, 68).replace(/\0+$/, "");
+  //     bytes = OKAY;
+  //   } else {
+  //     lines = 0;
+  //     name = "";
+  //     label = "";
+  //   }
+  //   return _u2i_list([bytes, lines, name, label]);
+  // }
 
   // 指定したハンドルの GPIO を出力に設定
   async gpio_claim_output(handle, gpio, level = 0, lFlags = 0) {
@@ -793,9 +911,7 @@ class _sbc {
     extBuf.writeUInt32LE(lFlags, 4);
     extBuf.writeUInt32LE(gpio, 8);
     extBuf.writeUInt32LE(level, 12);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GSOX, 16, [extBuf], 0, 4, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GSOX, [extBuf], 0, 4, 0));
   }
 
   // 指定したハンドルの GPIO を入力に設定
@@ -804,9 +920,7 @@ class _sbc {
     extBuf.writeUInt32LE(handle & 0xffff, 0);
     extBuf.writeUInt32LE(lFlags, 4);
     extBuf.writeUInt32LE(gpio, 8);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GSIX, 12, [extBuf], 0, 3, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GSIX, [extBuf], 0, 3, 0));
   }
 
   // GPIO の入力レベルを取得
@@ -814,9 +928,7 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle & 0xffff, 0);
     extBuf.writeUInt32LE(gpio, 4);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GR, 8, [extBuf], 0, 2, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GR, [extBuf], 0, 2, 0));
   }
 
   // GPIO の出力レベルを設定
@@ -825,9 +937,7 @@ class _sbc {
     extBuf.writeUInt32LE(handle & 0xffff, 0);
     extBuf.writeUInt32LE(gpio, 4);
     extBuf.writeUInt32LE(level, 8);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GW, 12, [extBuf], 0, 3, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GW, [extBuf], 0, 3, 0));
   }
 
   // GPIO を解放
@@ -835,9 +945,7 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle & 0xffff, 0);
     extBuf.writeUInt32LE(gpio, 4);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_GSF, 8, [extBuf], 0, 2, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_GSF, [extBuf], 0, 2, 0));
   }
 
   // PWM
@@ -856,9 +964,7 @@ class _sbc {
     extBuf.writeUInt32LE(pwm_duty_cycle * 1000, 12);
     extBuf.writeUInt32LE(pulse_offset, 16);
     extBuf.writeUInt32LE(pulse_cycles, 20);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_PX, 24, [extBuf], 0, 6, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_PX, [extBuf], 0, 6, 0));
   }
 
   // サーボモーター
@@ -877,9 +983,7 @@ class _sbc {
     extBuf.writeUInt32LE(servo_frequency, 12);
     extBuf.writeUInt32LE(pulse_offset, 16);
     extBuf.writeUInt32LE(pulse_cycles, 20);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_SX, 24, [extBuf], 0, 6, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_SX, [extBuf], 0, 6, 0));
   }
 
   // I2C
@@ -890,35 +994,21 @@ class _sbc {
     extBuf.writeUInt32LE(bus, 0);
     extBuf.writeUInt32LE(addr, 4);
     extBuf.writeUInt32LE(flags, 8);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_I2CO, 12, [extBuf], 0, 3, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CO, [extBuf], 0, 3, 0));
   }
 
   // I2C デバイスを閉じる
   async i2c_close(handle) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_I2CC, 4, [extBuf], 0, 1, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CC, [extBuf], 0, 1, 0));
   }
-
-  // // I2C デバイスに1バイト書き込む
-  // async i2c_write_byte(handle, byte_val) {
-  //     const extBuf = Buffer.alloc(8);
-  //     extBuf.writeUInt32LE(handle, 0);
-  //     extBuf.writeUInt32LE(byte_val, 4);
-  //     return _u2i(await _lg_command_ext_nolock(this.sl_s, _CMD_I2CWS, 8, [extBuf], 0, 2, 0));
-  // }
 
   // I2C デバイスから1バイト読み込む
   async i2c_read_byte(handle) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_I2CRS, 4, [extBuf], 0, 1, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CRS, [extBuf], 0, 1, 0));
   }
 
   // I2C デバイスの指定レジスタに1バイト書き込む
@@ -927,17 +1017,7 @@ class _sbc {
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
     extBuf.writeUInt32LE(byte_val, 8);
-    return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_I2CWB,
-        12,
-        [extBuf],
-        0,
-        3,
-        0,
-      ),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CWB, [extBuf], 0, 3, 0));
   }
 
   // I2C デバイスの指定レジスタから1バイト読み込む
@@ -945,9 +1025,7 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_I2CRB, 8, [extBuf], 0, 2, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CRB, [extBuf], 0, 2, 0));
   }
 
   // I2C デバイスの指定レジスタに 16bit ワードを書き込む
@@ -956,17 +1034,7 @@ class _sbc {
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
     extBuf.writeUInt32LE(word_val, 8);
-    return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_I2CWW,
-        12,
-        [extBuf],
-        0,
-        3,
-        0,
-      ),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CWW, [extBuf], 0, 3, 0));
   }
 
   // I2C デバイスの指定レジスタから 16bit ワードを読み込む
@@ -974,50 +1042,17 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_I2CRW, 8, [extBuf], 0, 2, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_I2CRW, [extBuf], 0, 2, 0));
   }
-
-  // // I2C デバイスの指定レジスタに最大 32バイトのデータを書き込む
-  // async i2c_write_block_data(handle, reg, data) {
-  //     const extBuf = Buffer.alloc(8);
-  //     extBuf.writeUInt32LE(handle, 0);
-  //     extBuf.writeUInt32LE(reg, 4);
-  //     const d = Buffer.from(data);
-  //     return _u2i(await _lg_command_ext_nolock(this.sl_s, _CMD_I2CWK, 8 + d.length, [extBuf, d], 0, 2, 0));
-  // }
-
-  // // I2C デバイスの指定レジスタから最大 32バイトのデータを読み込む
-  // async i2c_read_block_data(handle, reg) {
-  //     const extBuf = Buffer.alloc(8);
-  //     extBuf.writeUInt32LE(handle, 0);
-  //     extBuf.writeUInt32LE(reg, 4);
-  //     const bytes = u2i(await _lg_command_ext_nolock(this.sl_s, _CMD_I2CRK, 8, [extBuf], 0, 2, 0));
-  //     if (bytes > 0) {
-  //         const rdata = await this._rxbuf(bytes);
-  //         return _u2i_list([bytes, rdata]);
-  //     } else {
-  //         return _u2i_list([bytes, Buffer.alloc(0)]);
-  //     }
-  // }
 
   // I2C デバイスの指定レジスタにデータ（1-32バイト）を書き込む
   async i2c_write_i2c_block_data(handle, reg, data) {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
-    const dataBuf = Buffer.from(data);
+    const dataBuf = toRgpioBuffer(data);
     return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_I2CWI,
-        8 + dataBuf.length,
-        [extBuf, dataBuf],
-        0,
-        2,
-        0,
-      ),
+      await this._rgpio_command(_CMD_I2CWI, [extBuf, dataBuf], 0, 2, 0),
     );
   }
 
@@ -1027,55 +1062,39 @@ class _sbc {
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(reg, 4);
     extBuf.writeUInt32LE(count, 8);
-    const bytes = u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_I2CRI,
-        12,
-        [extBuf],
-        0,
-        3,
-        0,
-      ),
-    );
-    if (bytes > 0) {
-      const rdata = await this._rxbuf(bytes);
-      return _u2i_list([bytes, rdata]);
-    } else {
-      return _u2i_list([bytes, Buffer.alloc(0)]);
-    }
+
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(await this._rgpio_cmd(_CMD_I2CRI, [extBuf], 0, 3, 0));
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+      // Python版と同じく、read系の負値エラーはそのまま返す。
+      return [bytes, rdata];
+    });
   }
 
-  // // I2C 生デバイスから count バイトのデータを読み込む
-  // async i2c_read_device(handle, count) {
-  //     const extBuf = Buffer.alloc(8);
-  //     extBuf.writeUInt32LE(handle, 0);
-  //     extBuf.writeUInt32LE(count, 4);
-  //     const bytes = u2i(await _lg_command_ext_nolock(this.sl_s, _CMD_I2CRD, 8, [extBuf], 0, 2, 0));
-  //     if (bytes > 0) {
-  //         const rdata = await this._rxbuf(bytes);
-  //         return _u2i_list([bytes, rdata]);
-  //     } else {
-  //         return _u2i_list([bytes, Buffer.alloc(0)]);
-  //     }
-  // }
+  async i2c_read_device(handle, count) {
+    const extBuf = Buffer.alloc(8);
+    extBuf.writeUInt32LE(handle, 0);
+    extBuf.writeUInt32LE(count, 4);
+
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(await this._rgpio_cmd(_CMD_I2CRD, [extBuf], 0, 2, 0));
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+      return [bytes, rdata];
+    });
+  }
 
   // I2C 生デバイスにデータを書き込む
   async i2c_write_device(handle, data) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    const dataBuf = Buffer.from(data);
-    return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_I2CWD,
-        4 + dataBuf.length,
-        [extBuf, dataBuf],
-        0,
-        1,
-        0,
-      ),
-    );
+    const dataBuf = toRgpioBuffer(data);
+    if (dataBuf.length > 0) {
+      return _u2i(
+        await this._rgpio_command(_CMD_I2CWD, [extBuf, dataBuf], 0, 1, 0),
+      );
+    } else {
+      return 0;
+    }
   }
 
   // シリアル
@@ -1085,17 +1104,9 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(baud, 0);
     extBuf.writeUInt32LE(ser_flags, 4);
-    const ttyBuf = Buffer.from(tty);
+    const ttyBuf = toRgpioBuffer(tty);
     return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_SERO,
-        8 + ttyBuf.length,
-        [extBuf, ttyBuf],
-        0,
-        2,
-        0,
-      ),
+      await this._rgpio_command(_CMD_SERO, [extBuf, ttyBuf], 0, 2, 0),
     );
   }
 
@@ -1103,26 +1114,16 @@ class _sbc {
   async serial_close(handle) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_SERC, 4, [extBuf], 0, 1, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_SERC, [extBuf], 0, 1, 0));
   }
 
   // シリアルデバイスにデータを書き込む
   async serial_write(handle, data) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    const dataBuf = Buffer.from(data);
+    const dataBuf = toRgpioBuffer(data);
     return _u2i(
-      await _lg_command_ext_nolock(
-        this.sl_s,
-        _CMD_SERW,
-        4 + dataBuf.length,
-        [extBuf, dataBuf],
-        0,
-        1,
-        0,
-      ),
+      await this._rgpio_command(_CMD_SERW, [extBuf, dataBuf], 0, 1, 0),
     );
   }
 
@@ -1131,24 +1132,19 @@ class _sbc {
     const extBuf = Buffer.alloc(8);
     extBuf.writeUInt32LE(handle, 0);
     extBuf.writeUInt32LE(count, 4);
-    const bytes = u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_SERR, 8, [extBuf], 0, 2, 0),
-    );
-    if (bytes > 0) {
-      const rdata = await this._rxbuf(bytes);
-      return _u2i_list([bytes, rdata]);
-    } else {
-      return _u2i_list([bytes, Buffer.alloc(0)]);
-    }
+
+    return this._enqueueCommand(async () => {
+      const bytes = u2i(await this._rgpio_cmd(_CMD_SERR, [extBuf], 0, 2, 0));
+      const rdata = bytes > 0 ? await this._rxbuf(bytes) : Buffer.alloc(0);
+      return [bytes, rdata];
+    });
   }
 
   // シリアルデバイスの読み込みバッファに残っているデータ数を取得
   async serial_data_available(handle) {
     const extBuf = Buffer.alloc(4);
     extBuf.writeUInt32LE(handle, 0);
-    return _u2i(
-      await _lg_command_ext_nolock(this.sl_s, _CMD_SERDA, 4, [extBuf], 0, 1, 0),
-    );
+    return _u2i(await this._rgpio_command(_CMD_SERDA, [extBuf], 0, 1, 0));
   }
 
   // ツール
@@ -1220,5 +1216,3 @@ module.exports = {
   PUD_DOWN,
   PUD_UP,
 };
-
-// Python -> Node.js 変換アシスト：Gemini, GitHub Copilot
